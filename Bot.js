@@ -11,7 +11,7 @@ function play(connection, message) {
         if (server.queue[0]) play (connection, message);
         else connection.disconnect();
         message.channel.send('Audio finished');
-        console.reply('Audio finished');
+        console.log('Audio finished');
     });
 }
 
