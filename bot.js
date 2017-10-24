@@ -10,7 +10,7 @@ const Colour = new Enmap({provider: new EnmapLevel({name: 'Colour'})});
 
 var servers = {};
 var yasin = [
-    'https://imgur.com/XBztwja',
+    'https://imgur.com/ZtD32Sr',
     'https://imgur.com/6cbFxbM'
 ];
 var randomColor = '#000000'.replace(/0/g,function(){return (~~(Math.random()*16)).toString(16);});
