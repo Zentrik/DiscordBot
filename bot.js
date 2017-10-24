@@ -4,11 +4,19 @@ const config = require("./config.json");
 const YTDL = require('ytdl-core');
 const Enmap = require('enmap');
 const EnmapLevel = require('enmap-level');
+const moment = require('moment');
+require('moment-duration-format');
 
 const NewRole = new Enmap({provider: new EnmapLevel({name: 'NewRole'})});
 const Colour = new Enmap({provider: new EnmapLevel({name: 'Colour'})});
 const GetUptime = bot => {
-    return moment.duration(bot.uptime).format('d[ days], h[ hours], m[ minutes, and ]s[ seconds]');
+    return moment.duration(bot.uptime, 'minutes').format('d:hh:mm', { forceLength: true });
+  };
+  const Unit = ['', 'K', 'M', 'G', 'T', 'P'];
+  const BytesToSize = (input, precision) => {
+    let index = Math.floor(Math.log(input) / Math.log(1024));
+    if (Unit >= Unit.length) return input + ' B';
+    return (input / Math.pow(1024, index)).toFixed(precision) + ' ' + Unit[index] + 'B';
   };
 
 var servers = {};
@@ -25,7 +33,7 @@ function memberName(message) {
 }
 
 function memberName1(member) {
-    return member.guild.members.get(member.id).displayNames;
+    return member.guild.members.get(member.id).displayName;
 }
 
 function color(member) { 
@@ -100,7 +108,7 @@ bot.on('guildMemberAdd', function(member) {
             permissions:[]
         }).then(function(role) {
             member.addRole(role);
-            console.log(mmemberName1(member) + ' assigned ' + newRoleName(member));
+            console.log(memberName1(member) + ' assigned ' + newRoleName(member));
         });
         console.log('New Role, ' + newRoleName(member) + ',created with the colour,  ' + color(member) +'.');
     }
@@ -334,7 +342,7 @@ if (!message.content.startsWith(config.prefix) || message.author.bot) return;
             message.channel.send(embed);
             console.log('Queue printed');
         case 'stats':
-            message.channel.send("'Statistics' \n 'Servers:' #" + `${bot.guilds.size}` + "\n 'Users:' #" +  `${bot.users.size}` + "\n 'Channels:' #" + `${bot.users.size}`, {code: 'cs'});
+            message.channel.send("'Statistics' \n 'Uptime' #" + `${GetUptime(bot)}` + "'Servers:' #" + `${bot.guilds.size}` + "\n 'Users:' #" +  `${bot.users.size}` + "\n 'Channels:' #" + `${bot.channels.size}` + "'Uptime:' #" + `${BytesToSize(process.memoryUsage().rss, 3)}` , {code: 'cs'});
             console.log('Stats');
             break;
         case 'help':
