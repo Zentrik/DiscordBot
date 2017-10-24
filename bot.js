@@ -7,6 +7,9 @@ const EnmapLevel = require('enmap-level');
 
 const NewRole = new Enmap({provider: new EnmapLevel({name: 'NewRole'})});
 const Colour = new Enmap({provider: new EnmapLevel({name: 'Colour'})});
+const GetUptime = bot => {
+    return moment.duration(bot.uptime).format('d[ days], h[ hours], m[ minutes, and ]s[ seconds]');
+  };
 
 var servers = {};
 var yasin = [
@@ -121,7 +124,7 @@ if (!message.content.startsWith(config.prefix) || message.author.bot) return;
                 .addField('Purpose', 'Dankness')
                 .addField('Maker', 'NeonNuke#1160')
                 .addField('To add me to your server visit:', 'https://discordapp.com/oauth2/authorize?client_id=316652824106893314&scope=bot&permissions=305155072')
-                .setThumbnail(message.author.avatarURL)
+                .setThumbnail(bot.user.avatarURL)
             message.channel.send(embed);
             console.log('Info');
             break;
@@ -143,6 +146,7 @@ if (!message.content.startsWith(config.prefix) || message.author.bot) return;
             break;  
         case 'setrole':
             NewRole.set(message.guild.id, args[1]);
+            message.reply([args]);
             message.reply(args[1] + ' is now the default role for newbs');
             console.log('Set Role ' + args[1]);
             break;
@@ -323,6 +327,16 @@ if (!message.content.startsWith(config.prefix) || message.author.bot) return;
             });
             message.delete();
             break;
+        case 'queue':
+            var embed = new Discord.RichEmbed()
+                .setColor(0x0000FF)
+                .setThumbnail(bot.user.avatarURL)
+            message.channel.send(embed);
+            console.log('Queue printed');
+        case 'stats':
+            message.channel.send("'Statistics' \n 'Servers:' #" + `${bot.guilds.size}` + "\n 'Users:' #" +  `${bot.users.size}` + "\n 'Channels:' #" + `${bot.users.size}`, {code: 'cs'});
+            console.log('Stats');
+            break;
         case 'help':
             var embed = new Discord.RichEmbed()
                 .setColor(0x0000FF)
@@ -343,16 +357,18 @@ if (!message.content.startsWith(config.prefix) || message.author.bot) return;
                 .addField('!Unpause', 'unpauses current song')
                 .addField('Skip', 'Skip current song')
                 .addField('Stop', 'Stops audio and clears queue')
+                .addField('!Queue', 'Prints Queue')
                 .addField('!Got', 'Plays Game of Thrones themetune, to repeat the audio place a number after the link')
                 .addField('!West', 'Plays WestWorld themetune, to repeat the audio place a number after the link')
                 .addField('!Info', 'Info')
-                .setThumbnail(message.author.avatarURL)
+                .addField('!Stats', 'View bot statistics')
+                .setThumbnail(bot.user.avatarURL)
             message.channel.send(embed);
             console.log('Help');
             break;
         default:
             message.reply('Invalid command. See !help');
-            console.log('Invalid Command ' + message.content);
+            console.log('Invalid Command ');
         }
 });
 
