@@ -18,7 +18,8 @@ npm install libsodium-wrappers@0.5.4 --save
 npm install enmap-level
 npm i enmap
 npm install ytdl-core
-npm i -g ffmpeg-binaries```
+npm i -g ffmpeg-binaries
+```
 ##### Then we need to setup our bot on our computer 
 1. Download the repository's file into your project folder
 
