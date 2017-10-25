@@ -342,7 +342,7 @@ if (!message.content.startsWith(config.prefix) || message.author.bot) return;
             message.channel.send(embed);
             console.log('Queue printed');
         case 'stats':
-             message.channel.send("'Statistics' \n 'Uptime:'   #" + `${GetUptime(bot)}` + "\n 'Servers:'  #" + `${bot.guilds.size}` + "\n 'Users:'    #" +  `${bot.users.size}` + "\n 'Channels:' #" + `${bot.channels.size}` + "\n 'Memory:'   #"+ `${BytesToSize(process.memoryUsage().rss, 3)}` , {code: 'cs'});
+            message.channel.send("'Statistics' \n 'Uptime:'   #" + `${GetUptime(bot)}` + "\n 'Servers:'  #" + `${bot.guilds.size}` + "\n 'Users:'    #" +  `${bot.users.size}` + "\n 'Channels:' #" + `${bot.channels.size}` + "\n 'Memory:'   #"+ `${BytesToSize(process.memoryUsage().rss, 3)}` , {code: 'cs'});
             console.log('Stats');
             break;
         case 'help':
