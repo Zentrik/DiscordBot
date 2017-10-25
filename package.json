@@ -1,0 +1,23 @@
+{
+  "name": "discordbot",
+  "version": "1.0.0",
+  "description": "A Discord Bot that can do a range of things, from banning and kicking to playing music.",
+  "main": "bot.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "bufferutil": "^3.0.2",
+    "discord.js": "^11.2.1",
+    "enmap": "^0.4.2",
+    "enmap-level": "^1.0.0",
+    "libsodium-wrappers": "^0.5.4",
+    "moment": "^2.19.1",
+    "moment-duration-format": "^1.3.0",
+    "node-opus": "^0.2.7",
+    "uws": "^0.14.5",
+    "ytdl-core": "^0.18.1"
+  }
+}
