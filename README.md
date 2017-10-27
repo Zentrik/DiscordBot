@@ -14,6 +14,16 @@ If you are on windows first run `npm install --global windows-build-tools`.
 If you are on debian (eg. ubuntu) `sudo apt-get install libav-tools -y`, otherwise run `npm i -g ffmpeg-binaries` for all other OSes.
 Then run `npm install`
 
+##### Youtube Data API
+Use this [wizard](https://console.developers.google.com/start/api?id=youtube) to create or select a project in the Google Developers Console and automatically turn on the API. Click Continue, then Go to credentials.
+On the Add credentials to your project page, click the Cancel button.
+At the top of the page, select the OAuth consent screen tab. Select an Email address, enter a Product name if not already set, and click the Save button.
+Select the Credentials tab, click the Create credentials button and select OAuth client ID.
+Select the application type Other, enter the name "YouTube Data API Quickstart", and click the Create button.
+Click OK to dismiss the resulting dialog.
+Click the file_download (Download JSON) button to the right of the client ID.
+Move this file to your project directory and rename it to client_secret.json.
+
 ##### Run it 
 1. Run `node bot`
 2. Now the bot should show up in the server you told it to and you can type `!help` for a list of commands
