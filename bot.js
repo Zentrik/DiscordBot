@@ -28,7 +28,7 @@ const GetUptime = bot => {
 
   var servers = {};
   var yasin = [
-      'https://imgur.com/XBztwja',
+      'https://imgur.com/ZtD32Sr',
       'https://imgur.com/6cbFxbM'
   ];
   var randomColor = '#000000'.replace(/0/g,function(){return (~~(Math.random()*16)).toString(16);});
@@ -94,18 +94,17 @@ const GetUptime = bot => {
       });
   }
 
-  function addAudio (message, repeat, url) {
+  function addAudio (message, repeat, url, title) {
     var server = servers[message.guild.id];
     if ((Number.isInteger(repeat))>0) {
-      message.reply('Audio added to the Queue ' + repeat + ' times! :wink:');
+      message.reply(title +' added to the Queue ' + repeat + ' times! :wink:');
       while (repeat>0) {
           server.queue.push(url);
           repeat --
       }
     } else {
-      console.log('push' + url);
       server.queue.push(url);
-      message.reply('Audio added to the Queue! :wink:');
+      message.reply(title +' added to the Queue! :wink:');
     }
   if (!message.guild.voiceConnection) message.member.voiceChannel.join().then(function(connect) {
       play(connect, message);
@@ -264,6 +263,7 @@ const GetUptime = bot => {
                       queue: []
                   };
 
+                  var title = '';
                   var searchTerm = args[1];
                   var url = 'https://www.youtube.com/watch?v=';
                   var id = '' ;
@@ -334,7 +334,7 @@ const GetUptime = bot => {
                         q: searchTerm,
                         type: 'video',
                         part: 'snippet',
-                        fields: 'items(id,snippet(channelId,title,thumbnails))'
+                        fields: 'items(id,snippet(channelId,title))'
                       }, function(err, response) {
                         if (err) {
                           console.log('The API returned an error: ' + err);
@@ -347,13 +347,13 @@ const GetUptime = bot => {
                         return;
                       } else {
                         id = search[0].id.videoId;
+                        title = search[0].snippet.title;
                         url = url + id;
-                        console.log('This video\'s ID is %s. Its title is \'%s\', it was uploaded by %s and the thumnail is %s.',
-                                    search[0].id.videoId,
-                                    search[0].snippet.title,
-                                    search[0].snippet.channelId,
-                                    search[0].snippet.thumnails);
-                        addAudio(message, repeat, url);
+                        //console.log('This video\'s ID is %s. Its title is \'%s\', it was uploaded by %s and the thumnail is %s.',
+                                  //  search[0].id.videoId,
+                                  //  search[0].snippet.title,
+                                  //  search[0].snippet.channelId,
+                        addAudio(message, repeat, url, title);
                         return;
                       }
                     });
