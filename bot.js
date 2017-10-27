@@ -349,6 +349,7 @@ const GetUptime = bot => {
                         id = search[0].id.videoId;
                         title = search[0].snippet.title;
                         url = url + id;
+                        console.log(url);
                         //console.log('This video\'s ID is %s. Its title is \'%s\', it was uploaded by %s and the thumnail is %s.',
                                   //  search[0].id.videoId,
                                   //  search[0].snippet.title,
@@ -360,6 +361,8 @@ const GetUptime = bot => {
                   }
                 } else {
                   url = args[1];
+                  console.log(url);
+                  addAudio(message, repeat, url, title);
                 }
               break;
             case 'skip':
