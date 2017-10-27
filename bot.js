@@ -448,6 +448,7 @@ const GetUptime = bot => {
                     .setThumbnail(bot.user.avatarURL)
                 message.channel.send(embed);
                 console.log('Queue printed');
+                break;
             case 'stats':
                 message.channel.send("'Statistics' \n 'Uptime:'   #" + `${GetUptime(bot)}` + "\n 'Servers:'  #" + `${bot.guilds.size}` + "\n 'Users:'    #" +  `${bot.users.size}` + "\n 'Channels:' #" + `${bot.channels.size}` + "\n 'Memory:'   #"+ `${BytesToSize(process.memoryUsage().rss, 3)}` , {code: 'cs'});
                 console.log('Stats');
