@@ -1,3 +1,4 @@
+
 const Discord = require('discord.js');
 const bot = new Discord.Client();
 const config = require("./config.json");
@@ -67,7 +68,6 @@ const GetUptime = bot => {
       } else {
           Colour.set(member.guild.id, randomColor);
       }
-      console.log('Colour set to ' + color(member));
   }
 
   function RoleColour(message) {
@@ -127,10 +127,10 @@ const GetUptime = bot => {
               color: color(member),
               permissions:[]
           }).then(function(role) {
+              console.log('New Role, ' + newRoleName(member) + ',created with the colour,  ' + color(member) +'.');
               member.addRole(role);
               console.log(memberName1(member) + ' assigned ' + newRoleName(member));
           });
-          console.log('New Role, ' + newRoleName(member) + ',created with the colour,  ' + color(member) +'.');
       }
   });
 
@@ -144,7 +144,6 @@ const GetUptime = bot => {
           message.channel.fetchMessages({
             limit: 100,
           }).then((messages) => {
-            console.log('art');
               var messages = messages.filter(message => !message.content.startsWith(config.prefix) || message.author.bot).array().slice(0, 100);
               message.channel.bulkDelete(messages).catch(error => console.log(error.stack));
             })
