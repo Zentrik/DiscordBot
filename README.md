@@ -9,10 +9,9 @@ Follow this guide: [Creating a discord bot & getting a token by reactiflux](http
 
 ##### We also need to install 'dependencies', so that our bot can connect to our server in discord and work
 1. [First we need Node.js and npm](https://nodejs.org/en/download/current/)
-4. Run all of these commands, using node.js command prompt as administator
-If you are on windows first run `npm install --global windows-build-tools`.
-If you are on debian (eg. ubuntu) `sudo apt-get install libav-tools -y`, otherwise run `npm i -g ffmpeg-binaries` for all other OSes.
-Then run `npm install`
+2. Run all of these commands, using node.js command prompt as administator (only for windows)
+3. If you are on windows first run `npm install --global windows-build-tools`.
+4. Then run `npm install` 
 
 ##### Youtube Data API
 1. Use this [wizard](https://console.developers.google.com/start/api?id=youtube) to create or select a project in the Google Developers Console and automatically turn on the API. Click Continue, then Go to credentials.
