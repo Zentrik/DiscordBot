@@ -27,7 +27,7 @@ Then run `npm install`
 ##### Run it 
 1. Run `node bot`
 2. The first time you will have to visit the provided url and copy the code
-3. Now the bot should show up in the server you told it to and you can type `!help` for a list of commands
+3. Now the bot should show up in the server you told it to and you can type `n!help` for a list of commands
 4. Give your bot admin under roles so that it can perform all of its functions.
 
 
