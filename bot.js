@@ -108,13 +108,13 @@ function play(connect, message) {
   });
 }
 
-function addAudio(message, repeat, url, title, thumbnail) {
+function addAudio(message, repeat, url, title, thumbnail, channelTitle) {
   var server = servers[message.guild.id];
   if ((Number.isInteger(repeat)) > 0) {
     var embed = new Discord.RichEmbed()
       .setColor(0x0000FF)
       .setThumbnail(thumbnail)
-      .addField(title, 'ChannelHere')
+      .addField(title, channelTitle)
       .addField('Added', repeat + ' times')
     message.channel.send(embed);
     while (repeat > 0) {
@@ -126,7 +126,7 @@ function addAudio(message, repeat, url, title, thumbnail) {
     var embed = new Discord.RichEmbed()
       .setColor(0x0000FF)
       .setThumbnail(thumbnail)
-      .addField(title, 'ChannelHere')
+      .addField(title, channelTitle)
     message.channel.send(embed);
   }
   if (!message.guild.voiceConnection) message.member.voiceChannel.join().then(function(connect) {
@@ -140,7 +140,7 @@ bot.on('ready', function() {
 });
 
 bot.on('guildMemberAdd', function(member) {
-  member.guild.channels.find('name', 'general').send(member.toString() + ', Welcome you ' + newRoleName(member) + ', type !help for a list of commands');
+  member.guild.channels.find('name', 'general').send(member.toString() + ', Welcome you ' + newRoleName(member) + ', type n!help for a list of commands');
   console.log('Welcome message sent to ' + memberName1(member));
 
   if (!newRole(member)) {
@@ -163,7 +163,7 @@ bot.on('guildMemberAdd', function(member) {
 });
 
 bot.on('message', function(message) {
-  if (!message.content.startsWith(config.prefix) || message.author.bot) return;
+  if (!message.content.startsWith(config.prefix) && !message.content.startsWith(config.prefix_uppercase) || message.author.bot) return;
 
   var args = message.content.substring(config.prefix.length).split(' ');
 
@@ -172,7 +172,7 @@ bot.on('message', function(message) {
       message.channel.fetchMessages({
         limit: 100,
       }).then((messages) => {
-        var messages = messages.filter(message => !message.content.startsWith(config.prefix) || message.author.bot).array().slice(0, 100);
+        var messages = messages.filter(message => !message.content.startsWith(config.prefix) && !message.content.startsWith(config.prefix_uppercase) || message.author.bot).array().slice(0, 100);
         message.channel.bulkDelete(messages).catch(error => console.log(error.stack));
       });
       break;
@@ -287,6 +287,7 @@ bot.on('message', function(message) {
       var url = 'https://www.youtube.com/watch?v=';
       var id = '';
       var thumbnail = 'https://i.ytimg.com/vi/';
+      var channelTitle = '';
       var repeat = parseInt(args[2]);
 
       if (!args[1].startsWith('https://www.youtube.com/watch?v=')) {
@@ -358,7 +359,7 @@ bot.on('message', function(message) {
             q: searchTerm,
             type: 'video',
             part: 'snippet',
-            fields: 'items(id,snippet(channelId,title))'
+            fields: 'items(id,snippet(channelTitle,title))'
           }, function(err, response) {
             if (err) {
               console.log('The API returned an error: ' + err);
@@ -372,16 +373,17 @@ bot.on('message', function(message) {
             } else {
               id = search[0].id.videoId;
               title = search[0].snippet.title;
+              channelTitle = search[0].snippet.channelTitle;
               url = url + id;
               thumbnail = thumbnail + id + '/hqdefault.jpg';
-              addAudio(message, repeat, url, title, thumbnail);
+              addAudio(message, repeat, url, title, thumbnail, channelTitle);
               return;
             }
           });
         }
       } else {
         url = args[1];
-        addAudio(message, repeat, url, title, thumbnail);
+        addAudio(message, repeat, url, title, thumbnail, channelTitle);
       }
       break;
     case 'skip':
@@ -438,6 +440,32 @@ bot.on('message', function(message) {
       });
       message.delete();
       break;
+      case 'dd':
+        if (!message.member.voiceChannel) {
+          return message.channel.send("Please join a Voice Channel");
+        }
+        if (!servers[message.guild.id]) servers[message.guild.id] = {
+          queue: []
+        };
+
+        var server = servers[message.guild.id];
+        var repeat = parseInt(args[1]);
+        if ((Number.isInteger(repeat)) > 0) {
+          message.reply('Daredevil themetune added to the Queue ' + repeat + ' times! :wink:');
+          while (repeat > 0) {
+            server.queue.push('https://www.youtube.com/watch?v=KFYFh8w4758');
+            repeat--;
+          }
+        } else {
+          server.queue.push('https://www.youtube.com/watch?v=KFYFh8w4758');
+          message.reply("Daredevil themetune added to the Queue! :wink:");
+        }
+
+        if (!message.guild.voiceConnection) message.member.voiceChannel.join().then(function(connect) {
+          play(connect, message);
+        });
+        message.delete();
+        break;
     case 'west':
       if (!message.member.voiceChannel) {
         return message.channel.send("Please join a Voice Channel");
@@ -498,6 +526,7 @@ bot.on('message', function(message) {
         .addField(config.prefix + 'Queue', 'Prints Queue')
         .addField(config.prefix + 'Got', 'Plays Game of Thrones themetune, to repeat the audio place a number after the link')
         .addField(config.prefix + 'West', 'Plays WestWorld themetune, to repeat the audio place a number after the link')
+        .addField(config.prefix + 'DD', 'Plays Daredevil themetune, to repeat the audio place a number after the link')
         .addField(config.prefix + 'Info', 'Info')
         .addField(config.prefix + 'Stats', 'View bot statistics')
         .addField(config.prefix + 'Purge', 'Deletes all bot messages and messages starting with ' + config.prefix)
@@ -506,7 +535,7 @@ bot.on('message', function(message) {
       console.log('Help');
       break;
     default:
-      message.reply('Invalid command. See !help');
+      message.reply('Invalid command. See n!help');
       console.log('Invalid Command ');
   }
 });
