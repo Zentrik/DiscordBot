@@ -256,7 +256,7 @@ bot.on('message', function(message) {
       console.log('Deleted ' + newRoleMessage(message));
       break;
     case 'addrole':
-      if (!argsrole]) {
+      if (!argsrole) {
         message.reply('Please provide a role');
         console.log(memberName(message) + ' did not provide a role');
         break;
