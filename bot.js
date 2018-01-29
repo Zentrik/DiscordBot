@@ -54,11 +54,18 @@ function memberName1(member) {
 }
 
 function color(member) {
+  if (!Colour.get(member.guild.id)) {
+    if (NewRole.get(member.guild.id).toLowerCase() === 'pile of shit') {
+      Colour.set(member.guild.id, 0x593001);
+    } else {
+      Colour.set(member.guild.id, randomColor);
+    }
+  }
   return Colour.get(member.guild.id);
 }
 
-function roleName(member) {
-  NewRole.get(member.guild.id);
+function roleName(message) {
+  NewRole.get(message.guild.id);
 }
 
 function newRole(member) {
@@ -69,21 +76,14 @@ function newRoleName(member) {
   if (!NewRole.get(member.guild.id)) {
     NewRole.set(member.guild.id, 'Pile of Shit');
   }
+  return NewRole.get(member.guild.id);
 }
 
 function newRoleMessage(message) {
   if (!NewRole.get(message.guild.id)) {
     NewRole.set(message.guild.id, 'Pile of Shit');
   }
-}
-
-
-function RoleColour(member) {
-  if (NewRole.get(member.guild.id).toLowerCase() === 'pile of shit') {
-    Colour.set(member.guild.id, 0x593001);
-  } else {
-    Colour.set(member.guild.id, randomColor);
-  }
+  return NewRole.get(message.guild.id);
 }
 
 function RoleColourset(message) {
@@ -150,21 +150,20 @@ bot.on('guildMemberAdd', function(member) {
   console.log('Welcome message sent to ' + memberName1(member));
 
   if (!newRole(member)) {
-    newRoleName(member);
     RoleColour(member);
     console.log('Role Colour set to: ' + color(member));
     member.guild.createRole({
-      name: roleName(member),
+      name: newRoleName(member),
       color: color(member),
       permissions: []
     }).then(function(role) {
-      console.log('New Role, ' + roleName(member) + ',created with the colour,  ' + color(member) + '.');
+      console.log('New Role, ' + newRoleName(member) + ',created with the colour,  ' + color(member) + '.');
       member.addRole(role).catch(console.error);
-      console.log(memberName1(member) + ' assigned ' + roleName(member));
+      console.log(memberName1(member) + ' assigned ' + newRoleName(member));
     });
   } else {
     member.addRole(newRole(member)).catch(console.error);
-    console.log(memberName1(member) + ' assigned ' + roleName(member));
+    console.log(memberName1(member) + ' assigned ' + newRoleName(member));
   }
 });
 
@@ -172,6 +171,12 @@ bot.on('message', function(message) {
   if (!message.content.startsWith(config.prefix) && !message.content.startsWith(config.prefix_uppercase) || message.author.bot) return;
 
   var args = message.content.substring(config.prefix.length).split(' ');
+  var argsrole = [].slice.call(args);
+  argsrole.splice(0,1);
+  var argssearch = argsrole.splice(args.length - 1, 1);
+  argssearch = argssearch.join(' ');
+  argsrole = argsrole.join(' ');
+
   if (args[0].startsWith('eval')) {
     if(message.author.id !== config.ownerID) return;
     try {
@@ -234,14 +239,11 @@ bot.on('message', function(message) {
       console.log('Spam');
       break;
     case 'setrole':
-      NewRole.set(message.guild.id, args[1]);
-      message.reply([args]);
-      message.reply(args[1] + ' is now the default role for newbs');
-      console.log('Set Role ' + args[1]);
+      NewRole.set(message.guild.id, argsrole]);
+      message.reply(argsrole + ' is now the default role for newbs');
       break;
     case 'role':
       message.reply(newRoleMessage(message));
-      console.log('Print Role');
       break;
     case 'removenewrole':
       message.member.removeRole(newRoleMessage(message)).catch(console.error);
@@ -254,49 +256,46 @@ bot.on('message', function(message) {
       console.log('Deleted ' + newRoleMessage(message));
       break;
     case 'addrole':
-      if (!args[1]) {
+      if (!argsrole]) {
         message.reply('Please provide a role');
         console.log(memberName(message) + ' did not provide a role');
         break;
       } else {
-        addRoleName = args[1];
+        addRoleName = argsrole;
       }
 
-      if (!message.guild.roles.find('name', args[1])) {
+      if (!message.guild.roles.find('name', argsrole)) {
         message.guild.createRole({
-          name: args[1],
-          color: colour1,
+          name: argsrole,
+          color: randomColor,
           permissions: []
         }).then(function(role) {
           message.member.addRole(role);
         });
-        message.reply('Assigned role, ' + args[1] + ', to you');
-        console.log('New Role ' + args[1] + ' ' + RoleColourset(message) + ', created on guild ,' + message.guild.name + ', by ' + memberName(message));
-      } else if (message.member.roles.find("name", args[1])) {
+        message.reply('Assigned role, ' + argsrole + ', to you');
+      } else if (message.member.roles.find("name", argsrole)) {
         message.reply('You already have this role');
-        console.log(memberName(message) + ' already has this role, ' + args[1] + ' ' + message.guild.name);
       } else {
-        message.member.addRole(message.guild.roles.find('name', args[1])).catch(console.error);
-        message.reply('Role, ' + args[1] + ', added');
-        console.log('Role, ' + args[1] + ', added to ' + memberName(message));
+        message.member.addRole(message.guild.roles.find('name', argsrole)).catch(console.error);
+        message.reply('Role, ' + argsrole + ', added');
       }
       break;
     case 'deleterole':
-      if (args[1]) {
-        message.guild.roles.find('name', args[1]).delete().catch(console.error);
+      if (argsrole) {
+        message.guild.roles.find('name', argsrole).delete().catch(console.error);
         message.reply('Role Deleted');
-        console.log('Deleted Role ' + args[1]);
+        console.log('Deleted Role ' + argsrole);
       } else {
         message.reply('Include a role to delete');
         console.log('Role to delete not included');
       }
       break;
     case 'removerole':
-      if (args[1]) {
-        if (message.members.roles.find('name', args[1])) {
-          message.member.removeRole(message.members.roles.find('name', args[1])).catch(console.error);
+      if (argsrole) {
+        if (message.members.roles.find('name', argsrole)) {
+          message.member.removeRole(message.members.roles.find('name', argsrole)).catch(console.error);
           message.reply('Role removed');
-          console.log('Removed Role ' + args[1]);
+          console.log('Removed Role ' + argsrole);
         }
       } else {
         message.reply('Include a role to remove');
@@ -319,12 +318,12 @@ bot.on('message', function(message) {
       };
 
       var title = '';
-      var searchTerm = args[1];
+      var searchTerm = argssearch;
       var url = 'https://www.youtube.com/watch?v=';
       var id = '';
       var thumbnail = 'https://i.ytimg.com/vi/';
       var channelTitle = '';
-      var repeat = parseInt(args[2]);
+      var repeat = parseInt(args[args.length - 1]);
 
       if (!args[1].startsWith('https://www.youtube.com/watch?v=')) {
         fs.readFile('client_secret.json', function processClientSecrets(err, content) {
@@ -541,6 +540,26 @@ bot.on('message', function(message) {
       });
       console.log('Stats');
       break;
+    case 'kick':
+      if (message.mentions.members.first() === undefined) {
+        message.delete;
+        message.reply('Please specify a user to kick with a mention')
+        break;
+      }
+      var role = message.member.colorRole;
+      var member = message.guild.member(message.mentions.members.first());
+      var memberrole = member.colorRole;
+      message.delete();
+      if (message.member.hasPermission("KICK_MEMBERS") && role.comparePositionTo(memberrole) > 0 || message.guild.ownerID == message.member.id) {
+        member.kick();
+        message.channel.send(memberName(message) + ' has kicked ' + member.displayName);
+      } else {
+        message.reply('You do not have enough permissions to kick ' + member.displayName);
+      }
+      break;
+    case 'myrole':
+      console.log(message.member.colorRole);
+      break;
     case 'help':
       var embed = new Discord.RichEmbed()
         .setColor(0x0000FF)
@@ -567,6 +586,7 @@ bot.on('message', function(message) {
         .addField(config.prefix + 'Stats', 'View bot statistics')
         .addField(config.prefix + 'Purge (number)', 'Fetches the defined number or 100 messages and deletes all of them that are bot messages or start with n!')
         .addField(config.prefix + 'Eval', 'Eval command for the owner of this bot')
+        .addField(config.prefix + 'Kick @member', 'Kicks mentioned member')
         .setThumbnail(bot.user.avatarURL)
       message.channel.send(embed);
       console.log('Help');
