@@ -101,7 +101,6 @@ function play(connect, message) {
     filter: "audioonly"
   }));
   server.queue.shift();
-
   server.dispatcher.on("end", function() {
     if (server.queue[0]) play(connect, message);
     else connect.disconnect();
