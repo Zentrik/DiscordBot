@@ -134,6 +134,13 @@ function addAudio(message, repeat, url, title, thumbnail, channelTitle) {
   message.delete();
 }
 
+const clean = text => {
+  if (typeof(text) === "string")
+    return text.replace(/`/g, "`" + String.fromCharCode(8203)).replace(/@/g, "@" + String.fromCharCode(8203));
+  else
+    return text;
+  }
+
 bot.on('ready', function() {
   console.log('Ready');
 });
@@ -165,15 +172,45 @@ bot.on('message', function(message) {
   if (!message.content.startsWith(config.prefix) && !message.content.startsWith(config.prefix_uppercase) || message.author.bot) return;
 
   var args = message.content.substring(config.prefix.length).split(' ');
+  if (args[0].startsWith('eval')) {
+    if(message.author.id !== config.ownerID) return;
+    try {
+      const code = args.join(" ");
+      let evaled = eval(code);
+
+      if (typeof evaled !== "string")
+        evaled = require("util").inspect(evaled);
+
+        message.channel.send(clean(evaled), {code:"xl"});
+      } catch (err) {
+        message.channel.send(`\`ERROR\` \`\`\`xl\n${clean(err)}\n\`\`\``);
+      }
+      return;
+    }
 
   switch (args[0].toLowerCase()) {
     case 'purge':
-      message.channel.fetchMessages({
-        limit: 100,
-      }).then((messages) => {
-        var messages = messages.filter(message => !message.content.startsWith(config.prefix) && !message.content.startsWith(config.prefix_uppercase) || message.author.bot).array().slice(0, 100);
-        message.channel.bulkDelete(messages).catch(error => console.log(error.stack));
-      });
+      message.delete();
+      var fetch = parseInt(args[1]);
+      if ((Number.isInteger(fetch))) {
+        if (fetch > 100) {
+          fetch = 100
+          message.reply('I can only check 100 messages at a time.')
+        }
+        message.channel.fetchMessages({
+          limit: fetch,
+        }).then((messages) => {
+          var messages = messages.filter(message => message.content.startsWith(config.prefix) || message.content.startsWith(config.prefix_uppercase) || message.author.bot).array().slice(0, fetch);
+          message.channel.bulkDelete(messages).catch(error => console.log(error.stack));
+        });
+      } else {
+        message.channel.fetchMessages({
+          limit: 100,
+        }).then((messages) => {
+          var messages = messages.filter(message => message.content.startsWith(config.prefix)|| message.content.startsWith(config.prefix_uppercase) || message.author.bot).array().slice(0, 100);
+          message.channel.bulkDelete(messages).catch(error => console.log(error.stack));
+        });
+      }
       break;
     case 'navy':
       message.channel.send(navy);
@@ -528,7 +565,8 @@ bot.on('message', function(message) {
         .addField(config.prefix + 'DD', 'Plays Daredevil themetune, to repeat the audio place a number after the link')
         .addField(config.prefix + 'Info', 'Info')
         .addField(config.prefix + 'Stats', 'View bot statistics')
-        .addField(config.prefix + 'Purge', 'Deletes all bot messages and messages starting with ' + config.prefix)
+        .addField(config.prefix + 'Purge (number)', 'Fetches the defined number or 100 messages and deletes all of them that are bot messages or start with n!')
+        .addField(config.prefix + 'Eval', 'Eval command for the owner of this bot')
         .setThumbnail(bot.user.avatarURL)
       message.channel.send(embed);
       console.log('Help');
