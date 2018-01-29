@@ -239,7 +239,7 @@ bot.on('message', function(message) {
       console.log('Spam');
       break;
     case 'setrole':
-      NewRole.set(message.guild.id, argsrole]);
+      NewRole.set(message.guild.id, argsrole);
       message.reply(argsrole + ' is now the default role for newbs');
       break;
     case 'role':
