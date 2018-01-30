@@ -171,12 +171,13 @@ bot.on('message', function(message) {
   if (!message.content.startsWith(config.prefix) && !message.content.startsWith(config.prefix_uppercase) || message.author.bot) return;
 
   var args = message.content.substring(config.prefix.length).split(' ');
-  var argsrole = [].slice.call(args);
-  argsrole.splice(0,1);
-  var argssearch = argsrole.splice(args.length - 1, 1);
-  argssearch = argssearch.join(' ');
-  argsrole = argsrole.join(' ');
-
+  var argsrole = [].slice.call(args).splice(1,args.length).join(' ');
+  var argslast = parseInt(args[args.length - 1])
+  if (Number.isInteger(argslast)) {
+    var argssearch = [].slice.call(args).splice(1, args.length - 2).join(' ');
+  } else {
+    var argssearch = [].slice.call(args).splice(1, args.length - 1).join(' ');
+  }
   if (args[0].startsWith('eval')) {
     if(message.author.id !== config.ownerID) return;
     try {
@@ -318,7 +319,7 @@ bot.on('message', function(message) {
       };
 
       var title = '';
-      var searchTerm = argssearch;
+      var searchTerm = String(argssearch);
       var url = 'https://www.youtube.com/watch?v=';
       var id = '';
       var thumbnail = 'https://i.ytimg.com/vi/';
