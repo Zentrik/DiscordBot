@@ -207,14 +207,14 @@ bot.on('message', function(message) {
           limit: fetch,
         }).then((messages) => {
           var messages = messages.filter(message => message.content.startsWith(config.prefix) || message.content.startsWith(config.prefix_uppercase) || message.author.bot).array().slice(0, fetch);
-          message.channel.bulkDelete(messages).catch(error => console.log(error.stack));
+          message.channel.bulkDelete(messages, true).catch(error => console.log(error.stack));
         });
       } else {
         message.channel.fetchMessages({
           limit: 100,
         }).then((messages) => {
           var messages = messages.filter(message => message.content.startsWith(config.prefix)|| message.content.startsWith(config.prefix_uppercase) || message.author.bot).array().slice(0, 100);
-          message.channel.bulkDelete(messages).catch(error => console.log(error.stack));
+          message.channel.bulkDelete(messages, filterOld = true).catch(error => console.log(error.stack));
         });
       }
       break;
