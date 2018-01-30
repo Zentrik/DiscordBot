@@ -49,14 +49,6 @@ var colour1 = 0x593001;
 var spam = 'SPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAM!!!!';
 var navy = 'What the fuck did you just fucking say about me, you little bitch? I’ll have you know I graduated top of my class in the Navy Seals, and I’ve been involved in numerous secret raids on Al-Quaeda, and I have over 300 confirmed kills. I am trained in gorilla warfare and I’m the top sniper in the entire US armed forces. You are nothing to me but just another target. I will wipe you the fuck out with precision the likes of which has never been seen before on this Earth, mark my fucking words. You think you can get away with saying that shit to me over the Internet? Think again, fucker. As we speak I am contacting my secret network of spies across the USA and your IP is being traced right now so you better prepare for the storm, maggot. The storm that wipes out the pathetic little thing you call your life. You’re fucking dead, kid. I can be anywhere, anytime, and I can kill you in over seven hundred ways, and that’s just with my bare hands. Not only am I extensively trained in unarmed combat, but I have access to the entire arsenal of the United States Marine Corps and I will use it to its full extent to wipe your miserable ass off the face of the continent, you little shit. If only you could have known what unholy retribution your little “clever” comment was about to bring down upon you, maybe you would have held your fucking tongue. But you couldn’t, you didn’t, and now you’re paying the price, you goddamn idiot. I will shit fury all over you and you will drown in it. You’re fucking dead, kiddo.';
 
-function memberName(message) {
-  return message.guild.members.get(message.member.id).displayName;
-}
-
-function memberName1(member) {
-  return member.guild.members.get(member.id).displayName;
-}
-
 function color(member) {
   if (!Colour.get(member.guild.id)) {
     if (NewRole.get(member.guild.id).toLowerCase() === 'pile of shit') {
@@ -150,9 +142,10 @@ bot.on('ready', function() {
   console.log('Ready');
 });
 
+bot.on('unhandledRejection', error => console.error(`Uncaught Promise Rejection:\n${error}`));
+
 bot.on('guildMemberAdd', function(member) {
   member.guild.channels.find('name', 'general').send(member.toString() + ', Welcome you ' + newRoleName(member) + ', type n!help for a list of commands');
-  console.log('Welcome message sent to ' + memberName1(member));
 
   if (!newRole(member)) {
     RoleColour(member);
@@ -164,18 +157,16 @@ bot.on('guildMemberAdd', function(member) {
     }).then(function(role) {
       console.log('New Role, ' + newRoleName(member) + ',created with the colour,  ' + color(member) + '.');
       member.addRole(role).catch(console.error);
-      console.log(memberName1(member) + ' assigned ' + newRoleName(member));
     });
   } else {
     member.addRole(newRole(member)).catch(console.error);
-    console.log(memberName1(member) + ' assigned ' + newRoleName(member));
   }
 });
 
 bot.on('message', function(message) {
   if (!message.content.startsWith(config.prefix) && !message.content.startsWith(config.prefix_uppercase) || message.author.bot) return;
 
-  var args = message.content.substring(config.prefix.length).split(' ');
+  var args = message.content.substring(config.prefix.length).split(/ +/);
   var argsrole = [].slice.call(args).splice(1,args.length).join(' ');
   var argslast = parseInt(args[args.length - 1])
   if (Number.isInteger(argslast)) {
@@ -212,14 +203,14 @@ bot.on('message', function(message) {
           limit: fetch,
         }).then((messages) => {
           var messages = messages.filter(message => message.content.startsWith(config.prefix) || message.content.startsWith(config.prefix_uppercase) || message.author.bot).array().slice(0, fetch);
-          message.channel.bulkDelete(messages, true).catch(error => console.log(error.stack));
+          message.channel.bulkDelete(messages, true).catch(error => console.error(err));
         });
       } else {
         message.channel.fetchMessages({
           limit: 100,
         }).then((messages) => {
           var messages = messages.filter(message => message.content.startsWith(config.prefix)|| message.content.startsWith(config.prefix_uppercase) || message.author.bot).array().slice(0, 100);
-          message.channel.bulkDelete(messages, filterOld = true).catch(error => console.log(error.stack));
+          message.channel.bulkDelete(messages, true).catch(error => console.error(err));
         });
       }
       break;
@@ -264,7 +255,6 @@ bot.on('message', function(message) {
     case 'addrole':
       if (!argsrole) {
         message.reply('Please provide a role');
-        console.log(memberName(message) + ' did not provide a role');
         break;
       } else {
         addRoleName = argsrole;
@@ -553,12 +543,12 @@ bot.on('message', function(message) {
         break;
       }
       var role = message.member.colorRole;
-      var member = message.guild.member(message.mentions.members.first());
+      var member = message.member(message.mentions.members.first());
       var memberrole = member.colorRole;
       message.delete();
       if (message.member.hasPermission("KICK_MEMBERS") && role.comparePositionTo(memberrole) > 0 || message.guild.ownerID == message.member.id) {
         member.kick();
-        message.channel.send(memberName(message) + ' has kicked ' + member.displayName);
+        message.channel.send(message.member.displayName + ' has kicked ' + member.displayName);
       } else {
         message.reply('You do not have enough permissions to kick ' + member.displayName);
       }
