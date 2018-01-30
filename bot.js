@@ -12,6 +12,10 @@ const googleAuth = require('google-auth-library');
 const tokenPath = './youtubeCredentials.json';
 const tokenDir = './';
 const scopes = ['https://www.googleapis.com/auth/youtube.readonly'];
+const cheerio = require('cheerio'),
+      snekfetch = require('snekfetch'),
+      querystring = require('querystring');
+
 require('moment-duration-format');
 
 const NewRole = new Enmap({
@@ -142,6 +146,7 @@ const clean = text => {
   }
 
 bot.on('ready', function() {
+  bot.user.setPresence({game: { name: 'n!help | ' + `${bot.guilds.size}` + ' servers'}});
   console.log('Ready');
 });
 
@@ -561,6 +566,17 @@ bot.on('message', function(message) {
     case 'myrole':
       console.log(message.member.colorRole);
       break;
+    case 'google':
+    case'search':
+      let searchUrl = `https://www.google.com/search?q=${encodeURIComponent(argsrole)}`;
+      return snekfetch.get(searchUrl).then((result) => {
+        let $ = cheerio.load(result.text);
+        let googleData = $('.r').first().find('a').first().attr('href');
+        googleData = querystring.parse(googleData.replace('/url?', ''));
+        message.reply(`Result found!\n${googleData.q}`)
+      }).catch((err) => {
+     message.reply('No results found!');
+  });
     case 'help':
       var embed = new Discord.RichEmbed()
         .setColor(0x0000FF)
@@ -588,6 +604,7 @@ bot.on('message', function(message) {
         .addField(config.prefix + 'Purge (number)', 'Fetches the defined number or 100 messages and deletes all of them that are bot messages or start with n!')
         .addField(config.prefix + 'Eval', 'Eval command for the owner of this bot')
         .addField(config.prefix + 'Kick @member', 'Kicks mentioned member')
+        .addField(confing.prefix + 'Google/Search', 'Searches for query after command')
         .setThumbnail(bot.user.avatarURL)
       message.channel.send(embed);
       console.log('Help');
