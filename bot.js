@@ -234,7 +234,7 @@ bot.on('message', function(message) {
         .addField('Name', 'NeonNukeBot')
         .addField('Purpose', 'Dankness')
         .addField('Maker', 'NeonNuke#1160')
-        .addField('To add me to your server visit:', 'https://discordapp.com/oauth2/authorize?client_id=373462552614797312&scope=bot&permissions=305155072')
+        .addField('To add me to your server visit:', 'https://discordapp.com/oauth2/authorize?client_id=373462552614797312&scope=bot&permissions=303057922')
         .addField('My Github', 'https://github.com/Zentrik/DiscordBot')
         .setThumbnail(bot.user.avatarURL)
       message.channel.send(embed);
