@@ -543,7 +543,7 @@ bot.on('message', function(message) {
         break;
       }
       var role = message.member.colorRole;
-      var member = message.member(message.mentions.members.first());
+      var member = message.guild.member(message.mentions.members.first());
       var memberrole = member.colorRole;
       message.delete();
       if (message.member.hasPermission("KICK_MEMBERS") && role.comparePositionTo(memberrole) > 0 || message.guild.ownerID == message.member.id) {
@@ -594,7 +594,7 @@ bot.on('message', function(message) {
         .addField(config.prefix + 'Purge (number)', 'Fetches the defined number or 100 messages and deletes all of them that are bot messages or start with n!')
         .addField(config.prefix + 'Eval', 'Eval command for the owner of this bot')
         .addField(config.prefix + 'Kick @member', 'Kicks mentioned member')
-        .addField(confing.prefix + 'Google/Search', 'Searches for query after command')
+        .addField(config.prefix + 'Google/Search', 'Searches for query after command')
         .setThumbnail(bot.user.avatarURL)
       message.channel.send(embed);
       console.log('Help');
