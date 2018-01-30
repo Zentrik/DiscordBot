@@ -543,14 +543,19 @@ bot.on('message', function(message) {
         break;
       }
       var role = message.member.colorRole;
+      if (role == null && !message.guild.ownerID == message.member.id) break;
       var member = message.guild.member(message.mentions.members.first());
       var memberrole = member.colorRole;
       message.delete();
-      if (message.member.hasPermission("KICK_MEMBERS") && role.comparePositionTo(memberrole) > 0 || message.guild.ownerID == message.member.id) {
+      if (message.guild.ownerID == message.member.id || message.member.hasPermission("KICK_MEMBERS") && role.comparePositionTo(memberrole) > 0) {
+        if (!member.kickable) {
+          message.reply("I can't kick this member!");
+          break;
+        }
         member.kick();
         message.channel.send(message.member.displayName + ' has kicked ' + member.displayName);
       } else {
-        message.reply('You do not have enough permissions to kick ' + member.displayName);
+        message.reply('You do not have enough permissions to kick ' + member.displayName + '!');
       }
       break;
     case 'myrole':
