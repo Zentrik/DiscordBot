@@ -1,8 +1,8 @@
 {
   "name": "discordbot",
-  "version": "1.0.0",
-  "description": "A Discord Bot that can do a range of things, from banning and kicking to playing music.",
-  "main": "York.js",
+  "version": "1.7.0",
+  "description": "A Discord Bot that can do a range of things, from kicking to playing music.",
+  "main": "bot.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
