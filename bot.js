@@ -41,23 +41,26 @@ const BytesToSize = (input, precision) => {
 };
 
 var servers = {};
-var randomColor = '#000000'.replace(/0/g, function() {
-  return (~~(Math.random() * 16)).toString(16);
-});
-var addRoleName = '';
-var colour1 = 0x593001;
-var spam = 'SPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAMSPAM!!!!';
+
 var navy = 'What the fuck did you just fucking say about me, you little bitch? I’ll have you know I graduated top of my class in the Navy Seals, and I’ve been involved in numerous secret raids on Al-Quaeda, and I have over 300 confirmed kills. I am trained in gorilla warfare and I’m the top sniper in the entire US armed forces. You are nothing to me but just another target. I will wipe you the fuck out with precision the likes of which has never been seen before on this Earth, mark my fucking words. You think you can get away with saying that shit to me over the Internet? Think again, fucker. As we speak I am contacting my secret network of spies across the USA and your IP is being traced right now so you better prepare for the storm, maggot. The storm that wipes out the pathetic little thing you call your life. You’re fucking dead, kid. I can be anywhere, anytime, and I can kill you in over seven hundred ways, and that’s just with my bare hands. Not only am I extensively trained in unarmed combat, but I have access to the entire arsenal of the United States Marine Corps and I will use it to its full extent to wipe your miserable ass off the face of the continent, you little shit. If only you could have known what unholy retribution your little “clever” comment was about to bring down upon you, maybe you would have held your fucking tongue. But you couldn’t, you didn’t, and now you’re paying the price, you goddamn idiot. I will shit fury all over you and you will drown in it. You’re fucking dead, kiddo.';
 
 function color(member) {
   if (!Colour.get(member.guild.id)) {
     if (NewRole.get(member.guild.id).toLowerCase() === 'pile of shit') {
-      Colour.set(member.guild.id, 0x593001);
+      Colour.set(member.guild.id, '#593001');
     } else {
       Colour.set(member.guild.id, randomColor);
     }
   }
   return Colour.get(member.guild.id);
+}
+
+function randomColor(){
+  var c = '';
+  while (c.length < 6) {
+    c += (Math.random()).toString(16).substr(-6).substr(-1)
+  }
+  return '#'+c;
 }
 
 function roleName(message) {
@@ -80,14 +83,6 @@ function newRoleMessage(message) {
     NewRole.set(message.guild.id, 'Pile of Shit');
   }
   return NewRole.get(message.guild.id);
-}
-
-function RoleColourset(message) {
-  if (addRoleName.toLowerCase() === 'pile of shit') {
-    colour1 = 0x593001;
-  } else {
-    colour1 = randomColor;
-  }
 }
 
 function play(connect, message) {
@@ -231,10 +226,6 @@ bot.on('message', function(message) {
       message.channel.send(embed);
       console.log('Info');
       break;
-    case 'spam':
-      message.channel.send(spam);
-      console.log('Spam');
-      break;
     case 'setrole':
       NewRole.set(message.guild.id, argsrole);
       message.reply(argsrole + ' is now the default role for newbs');
@@ -256,14 +247,16 @@ bot.on('message', function(message) {
       if (!argsrole) {
         message.reply('Please provide a role');
         break;
-      } else {
-        addRoleName = argsrole;
       }
+      if (!message.guild.ownerID == message.member.id || !message.member.hasPermission("MANAGE_ROLES")) break;
+
+      var color = randomColor()
+      if (argsrole == 'pile of shit') color = '#593001'
 
       if (!message.guild.roles.find('name', argsrole)) {
         message.guild.createRole({
           name: argsrole,
-          color: randomColor,
+          color: color,
           permissions: []
         }).then(function(role) {
           message.member.addRole(role);
@@ -576,7 +569,6 @@ bot.on('message', function(message) {
       var embed = new Discord.RichEmbed()
         .setColor(0x0000FF)
         .addField(config.prefix + 'Navy', 'Navy Seals Copypasta with video')
-        .addField(config.prefix + 'Spam', 'Spams Chat')
         .addField(config.prefix + 'Purge', 'Delete all messages from bots or those starting with n!')
         .addField(config.prefix + 'Role', 'Shows role set for newbs')
         .addField(config.prefix + 'SetRole', 'Role following command becomes role for newbs')
