@@ -227,21 +227,12 @@ bot.on('message', function(message) {
       console.log('Info');
       break;
     case 'setrole':
+      if (!message.guild.ownerID == message.member.id || !message.member.hasPermission("MANAGE_ROLES")) break;
       NewRole.set(message.guild.id, argsrole);
       message.reply(argsrole + ' is now the default role for newbs');
       break;
     case 'role':
       message.reply(newRoleMessage(message));
-      break;
-    case 'removenewrole':
-      message.member.removeRole(newRoleMessage(message)).catch(console.error);
-      message.reply('Role Removed');
-      console.log('Remove New Role');
-      break;
-    case 'deletenewrole':
-      newRoleMessage(message).delete().catch(console.error);
-      message.reply('Role Deleted');
-      console.log('Deleted ' + newRoleMessage(message));
       break;
     case 'addrole':
       if (!argsrole) {
@@ -270,6 +261,7 @@ bot.on('message', function(message) {
       }
       break;
     case 'deleterole':
+      if (!message.guild.ownerID == message.member.id || !message.member.hasPermission("MANAGE_ROLES") && message.member.colorRole.comparePositionTo(message.guild.roles.find('name', argsrole).catch(console.error)) > 0) break;
       if (argsrole) {
         message.guild.roles.find('name', argsrole).delete().catch(console.error);
         message.reply('Role Deleted');
@@ -575,8 +567,6 @@ bot.on('message', function(message) {
         .addField(config.prefix + 'RemoveRole', 'Removes Role following command from Member')
         .addField(config.prefix + 'DeleteRole', 'Deletes Role following command from Server')
         .addField(config.prefix + 'AddRole', 'Adds Role following command to Member')
-        .addField(config.prefix + 'RemovenewRole', 'Removes Role for newbs from Member')
-        .addField(config.prefix + 'DeletenewRole', 'Deletes Role for newbs from Server')
         .addField(config.prefix + 'Play', 'Plays audio from Youtube video or searches , to repeat the audio place a number after the link')
         .addField(config.prefix + 'Pause', 'Pauses current song')
         .addField(config.prefix + 'Unpause', 'unpauses current song')
