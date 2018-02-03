@@ -27,6 +27,12 @@ const MemberChannel = new Enmap({
     name: 'MemberChannel'
   })
 });
+const Case = new Enmap({
+  provider: new EnmapLevel({
+    name: 'Case'
+  })
+});
+
 
 const GetUptime = client => {
   return moment.duration(client.uptime).format('d:hh:mm', {
@@ -40,6 +46,13 @@ const BytesToSize = (input, precision) => {
   return (input / Math.pow(1024, index)).toFixed(precision) + ' ' + Unit[index] + 'B';
 };
 
+const clean = text => {
+  if (typeof(text) === "string")
+    return text.replace(/`/g, "`" + String.fromCharCode(8203)).replace(/@/g, "@" + String.fromCharCode(8203));
+  else
+    return text;
+}
+
 var servers = {};
 
 var navy = 'What the fuck did you just fucking say about me, you little bitch? I’ll have you know I graduated top of my class in the Navy Seals, and I’ve been involved in numerous secret raids on Al-Quaeda, and I have over 300 confirmed kills. I am trained in gorilla warfare and I’m the top sniper in the entire US armed forces. You are nothing to me but just another target. I will wipe you the fuck out with precision the likes of which has never been seen before on this Earth, mark my fucking words. You think you can get away with saying that shit to me over the Internet? Think again, fucker. As we speak I am contacting my secret network of spies across the USA and your IP is being traced right now so you better prepare for the storm, maggot. The storm that wipes out the pathetic little thing you call your life. You’re fucking dead, kid. I can be anywhere, anytime, and I can kill you in over seven hundred ways, and that’s just with my bare hands. Not only am I extensively trained in unarmed combat, but I have access to the entire arsenal of the United States Marine Corps and I will use it to its full extent to wipe your miserable ass off the face of the continent, you little shit. If only you could have known what unholy retribution your little “clever” comment was about to bring down upon you, maybe you would have held your fucking tongue. But you couldn’t, you didn’t, and now you’re paying the price, you goddamn idiot. I will shit fury all over you and you will drown in it. You’re fucking dead, kiddo.';
@@ -52,18 +65,30 @@ function randomColor(){
   return '#'+c;
 }
 
-function modchannel(member) {
-  if (!ModChannel.get(member.guild.id)) {
-    ModChannel.set(member.guild.id, 'ModLogs');
+function modchannel(guild) {
+  if (!ModChannel.get(guild.id)) {
+    ModChannel.set(guild.id, 'modlogs');
   }
-  return ModChannel.get(member.guild.id);
+  return ModChannel.get(guild.id);
 }
 
 function memberchannel(member) {
   if (!MemberChannel.get(member.guild.id)) {
-    MemberChannel.set(member.guild.id, 'MemberLogs');
+    MemberChannel.set(member.guild.id, 'memberlogs');
   }
   return MemberChannel.get(member.guild.id);
+}
+
+function CaseId(guild) {
+  if (!Case.get(guild.id)) {
+    Case.set(guild.id, 1);
+  }
+  return Case.get(guild.id);
+}
+
+function CaseIdAdd(guild) {
+  var i = Case.get(guild.id) + 1;
+  Case.set(guild.id, i)
 }
 
 function play(connection, message) {
@@ -105,13 +130,6 @@ function addAudio(message, repeat, url, title, thumbnail, channelTitle) {
   message.delete();
 }
 
-const clean = text => {
-  if (typeof(text) === "string")
-    return text.replace(/`/g, "`" + String.fromCharCode(8203)).replace(/@/g, "@" + String.fromCharCode(8203));
-  else
-    return text;
-  }
-
 client.on('ready', ()=> {
   client.user.setPresence({game: { name: 'n!help | ' + `${client.guilds.size}` + ' servers'}});
   console.log('Ready');
@@ -120,22 +138,35 @@ client.on('ready', ()=> {
 client.on('unhandledRejection', error => console.error(`Uncaught Promise Rejection:\n${error}`));
 
 client.on('guildMemberAdd', member => {
+  if (!member.guild.me.hasPermission('MANAGE_CHANNELS')) {
+    member.guild.channels.find('id', member.guild.channels.firstKey()).send('Please, may I have the manage channels permission so that I can do log');
+    return;
+  }
+  if (!member.guild.channels.find('name', memberchannel(member))) {
+    member.guild.channels.create(memberchannel(member)).catch(console.error)
+  }
   const userJoinEmbed = new Discord.MessageEmbed()
     .setColor('#00ff00')
     .setTitle(member.displayName + ' (' + member.id + ')')
-    .addFooter('User joined', member.user.displayAvatarURL)
-    .setTimestamp()
-  member.guild.channels.find('name', memberchannel()).send(userJoinEmbed);
+    .setFooter('User joined', member.user.displayAvatarURL)
+    .setTimestamp(member.joinedAt)
+  member.guild.channels.find('name', memberchannel(member)).send(userJoinEmbed);
 });
 
-client.on('guildBanAdd', member =>) {
-  const userJoinEmbed = new Discord.MessageEmbed()
-    .setColor('#00ff00')
-    .setTitle(member.displayName + ' (' + member.id + ')')
-    .addFooter('User joined', member.user.displayAvatarURL)
-    .setTimestamp()
-  member.guild.channels.find('name', modchannel()).send(embed);
-}
+client.on('guildBanAdd', (guild, user) => {
+  guild.fetchAuditLogs({user: user.id, type: 22, limit: 1}).then(auditlog => {
+    var embed = new Discord.MessageEmbed()
+      .setColor('#ff0000')
+      .setTitle(auditlog.entries.executor.displayAvatarURL + ' ' + auditlog.entries.executor.username + '#' + auditlog.entries.exuctor.discriminator)
+      .addField('Member:', user.username + ' (' + user.id + ')')
+      .addField('Action: ', 'Ban')
+      .addField('Reason:', auditlog.entries.reason)
+      .setFooter('Case ' + CaseId(guild))
+      .setTimestamp(auditlog.entries.createdTimestamp)
+    guild.channels.find('name', modchannel(guild)).send(embed);
+  }).catch(console.error)
+  CaseIdAdd(guild);
+});
 
 client.on('message', message => {
   if (!message.content.startsWith(config.prefix) && !message.content.startsWith(config.prefix_uppercase) || message.author.bot) return;
@@ -199,11 +230,10 @@ client.on('message', message => {
         .addField('Name', 'NeonNukeBot')
         .addField('Purpose', 'Dankness')
         .addField('Maker', 'NeonNuke#1160')
-        .addField('To add me to your server visit:', 'https://discordapp.com/oauth2/authorize?client_id=373462552614797312&scope=bot&permissions=303057922')
+        .addField('To add me to your server visit:', 'https://discordapp.com/oauth2/authorize?client_id=373462552614797312&scope=bot&permissions=305153174')
         .addField('My Github', 'https://github.com/Zentrik/DiscordBot')
         .setThumbnail(client.user.avatarURL)
       message.channel.send(embed);
-      console.log('Info');
       break;
     case 'role':
       message.reply(newRoleMessage(message));
@@ -213,29 +243,35 @@ client.on('message', message => {
         message.reply('Please provide a role');
         break;
       }
-      if (!message.guild.ownerID == message.member.id || !message.member.hasPermission("MANAGE_ROLES")) break;
+      if (!message.guild.ownerID == message.member.id || !message.member.hasPermission("MANAGE_ROLES") && message.member.roles.color.comparePositionTo(message.guild.roles.find('name', argsrole).catch(console.error)) > 0) {
+        message.reply('You do not have sufficient permissions');
+        break;
+      }
 
       var color = randomColor()
       if (argsrole == 'pile of shit') color = '#593001'
 
       if (!message.guild.roles.find('name', argsrole)) {
-        message.guild.createRole({
+        message.guild.roles.create({
           name: argsrole,
           color: color,
           permissions: []
         }).then(function(role) {
-          message.member.addRole(role);
+          message.member.roles.add(role);
         });
         message.reply('Assigned role, ' + argsrole + ', to you');
       } else if (message.member.roles.find("name", argsrole)) {
         message.reply('You already have this role');
       } else {
-        message.member.addRole(message.guild.roles.find('name', argsrole)).catch(console.error);
+        message.member.roles.add(message.guild.roles.find('name', argsrole)).catch(console.error);
         message.reply('Role, ' + argsrole + ', added');
       }
       break;
     case 'deleterole':
-      if (!message.guild.ownerID == message.member.id || !message.member.hasPermission("MANAGE_ROLES") && message.member.colorRole.comparePositionTo(message.guild.roles.find('name', argsrole).catch(console.error)) > 0) break;
+      if (!message.guild.ownerID == message.member.id || !message.member.hasPermission("MANAGE_ROLES") && message.member.roles.color.comparePositionTo(message.guild.roles.find('name', argsrole).catch(console.error)) > 0) {
+        message.reply('You do not have sufficient permissions');
+        break;
+      }
       if (argsrole) {
         message.guild.roles.find('name', argsrole).delete().catch(console.error);
         message.reply('Role Deleted');
@@ -248,7 +284,7 @@ client.on('message', message => {
     case 'removerole':
       if (argsrole) {
         if (message.members.roles.find('name', argsrole)) {
-          message.member.removeRole(message.members.roles.find('name', argsrole)).catch(console.error);
+          message.member.roles.remove(message.members.roles.find('name', argsrole)).catch(console.error);
           message.reply('Role removed');
           console.log('Removed Role ' + argsrole);
         }
@@ -554,10 +590,10 @@ client.on('message', message => {
         message.reply('Please specify a user to kick with a mention')
         break;
       }
-      var role = message.member.colorRole;
+      var role = message.member.roles.color;
       if (role == null && !message.guild.ownerID == message.member.id) break;
       var member = message.guild.member(message.mentions.members.first());
-      var memberrole = member.colorRole;
+      var memberrole = member.roles.color;
       message.delete();
       if (message.guild.ownerID == message.member.id || message.member.hasPermission("KICK_MEMBERS") && role.comparePositionTo(memberrole) > 0) {
         if (!member.kickable) {
@@ -571,7 +607,7 @@ client.on('message', message => {
       }
       break;
     case 'myrole':
-      console.log(message.member.colorRole);
+      console.log(message.member.roles.color);
       break;
     case 'google':
     case'search':
