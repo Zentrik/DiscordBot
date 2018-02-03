@@ -17,22 +17,15 @@ const cheerio = require('cheerio'),
       snekfetch = require('snekfetch'),
       querystring = require('querystring');
 
-const ModChannel = new Enmap({
+const settings = new Enmap({
   provider: new EnmapLevel({
-    name: 'ModChannel'
+    name: 'settings'
   })
 });
-const MemberChannel = new Enmap({
-  provider: new EnmapLevel({
-    name: 'MemberChannel'
-  })
-});
-const Case = new Enmap({
-  provider: new EnmapLevel({
-    name: 'Case'
-  })
-});
-
+const defaultSettings = {
+  modLog: "modlogs",
+  memberLog: "memberlogs"
+}
 
 const GetUptime = client => {
   return moment.duration(client.uptime).format('d:hh:mm', {
@@ -63,32 +56,6 @@ function randomColor(){
     c += (Math.random()).toString(16).substr(-6).substr(-1)
   }
   return '#'+c;
-}
-
-function modchannel(guild) {
-  if (!ModChannel.get(guild.id)) {
-    ModChannel.set(guild.id, 'modlogs');
-  }
-  return ModChannel.get(guild.id);
-}
-
-function memberchannel(member) {
-  if (!MemberChannel.get(member.guild.id)) {
-    MemberChannel.set(member.guild.id, 'memberlogs');
-  }
-  return MemberChannel.get(member.guild.id);
-}
-
-function CaseId(guild) {
-  if (!Case.get(guild.id)) {
-    Case.set(guild.id, 1);
-  }
-  return Case.get(guild.id);
-}
-
-function CaseIdAdd(guild) {
-  var i = Case.get(guild.id) + 1;
-  Case.set(guild.id, i)
 }
 
 function play(connection, message) {
@@ -130,9 +97,49 @@ function addAudio(message, repeat, url, title, thumbnail, channelTitle) {
   message.delete();
 }
 
+function bannadd(guild, user) {
+  guild.fetchAuditLogs({user: user.id, type: 22, limit: 1}).then(auditlog => {
+    var embed = new Discord.MessageEmbed()
+      .setColor('#ff0000')
+      .setTitle(auditlog.entries.executor.displayAvatarURL() + ' ' + auditlog.entries.executor.username + '#' + auditlog.entries.exuctor.discriminator)
+      .addField('Member:', user.username + ' (' + user.id + ')')
+      .addField('Action: ', 'Ban')
+      .addField('Reason:', auditlog.entries.reason)
+      .setFooter('Case ' + CaseId(guild))
+      .setTimestamp(auditlog.entries.createdTimestamp)
+    guild.channels.find('name', settings.get(guild.id).modLog).send(embed);
+  }).catch(console.error);
+}
+
+function memberremove(member) {
+  var embed = new Discord.MessageEmbed()
+    .setColor('#ff0000')
+    .setTitle(member.displayName + ' (' + member.id + ')')
+    .setFooter('User left', member.user.displayAvatarURL())
+    .setTimestamp()
+  member.guild.channels.find('name', settings.get(member.guild.id).memberLog).send(embed);
+}
+
+function memberadd(member) {
+  var embed = new Discord.MessageEmbed()
+    .setColor('#00ff00')
+    .setTitle(member.displayName + ' (' + member.id + ')')
+    .setFooter('User joined', member.user.displayAvatarURL())
+    .setTimestamp(member.joinedAt)
+  member.guild.channels.find('name', settings.get(member.guild.id).memberLog).send(embed);
+}
+
 client.on('ready', ()=> {
   client.user.setPresence({game: { name: 'n!help | ' + `${client.guilds.size}` + ' servers'}});
   console.log('Ready');
+});
+
+client.on("guildCreate", guild => {
+  settings.set(guild.id, defaultSettings);
+  console.log('ay');
+});
+client.on("guildDelete", guild => {
+  settings.delete(guild.id);
 });
 
 client.on('unhandledRejection', error => console.error(`Uncaught Promise Rejection:\n${error}`));
@@ -142,30 +149,42 @@ client.on('guildMemberAdd', member => {
     member.guild.channels.find('id', member.guild.channels.firstKey()).send('Please, may I have the manage channels permission so that I can do log');
     return;
   }
-  if (!member.guild.channels.find('name', memberchannel(member))) {
-    member.guild.channels.create(memberchannel(member)).catch(console.error)
+  if (!member.guild.channels.find('name', settings.get(member.guild.id).memberLog)) {
+    member.guild.channels.create(settings.get(member.guild.id).memberLog).then(function(send) {
+      memberadd(member);
+    }).catch(console.error);
+  } else {
+    memberadd(member);
   }
-  const userJoinEmbed = new Discord.MessageEmbed()
-    .setColor('#00ff00')
-    .setTitle(member.displayName + ' (' + member.id + ')')
-    .setFooter('User joined', member.user.displayAvatarURL)
-    .setTimestamp(member.joinedAt)
-  member.guild.channels.find('name', memberchannel(member)).send(userJoinEmbed);
+});
+
+client.on('guildMemberRemove', member => {
+  member.guild.fetchAuditLogs({user: member.id, type: 20, limit: 1}).then(auditlog => {});
+  if (!member.guild.me.hasPermission('MANAGE_CHANNELS')) {
+    member.guild.channels.find('id', member.guild.channels.firstKey()).send('Please, may I have the manage channels permission so that I can do log');
+    return;
+  }
+  if (!member.guild.channels.find('name', settings.get(member.guild.id).memberLog)) {
+    member.guild.channels.create(settings.get(member.guild.id).memberLog).then(function(send) {
+      memberremove(member);
+    }).catch(console.error);
+  } else {
+    memberremove(member);
+  }
 });
 
 client.on('guildBanAdd', (guild, user) => {
-  guild.fetchAuditLogs({user: user.id, type: 22, limit: 1}).then(auditlog => {
-    var embed = new Discord.MessageEmbed()
-      .setColor('#ff0000')
-      .setTitle(auditlog.entries.executor.displayAvatarURL + ' ' + auditlog.entries.executor.username + '#' + auditlog.entries.exuctor.discriminator)
-      .addField('Member:', user.username + ' (' + user.id + ')')
-      .addField('Action: ', 'Ban')
-      .addField('Reason:', auditlog.entries.reason)
-      .setFooter('Case ' + CaseId(guild))
-      .setTimestamp(auditlog.entries.createdTimestamp)
-    guild.channels.find('name', modchannel(guild)).send(embed);
-  }).catch(console.error)
-  CaseIdAdd(guild);
+  if (!guild.me.hasPermission('MANAGE_CHANNELS')) {
+    guild.channels.find('id', guild.channels.firstKey()).send('Please, may I have the manage channels permission so that I can do log');
+    return;
+  }
+  if (!guild.channels.find('name', settings.get(guild.id).modLog)) {
+    guild.channels.create(settings.get(guild.id).modLog).then(function(send) {
+      bannadd(guild, user);
+    }).catch(console.error);
+  } else {
+    bannadd(guild, user)
+  }
 });
 
 client.on('message', message => {
