@@ -1,5 +1,5 @@
 const Discord = require('discord.js');
-const bot = new Discord.Client();
+const client = new Discord.Client();
 const config = require("./config.json");
 const fs = require('fs');
 const readline = require('readline');
@@ -7,6 +7,7 @@ const YTDL = require('ytdl-core');
 const Enmap = require('enmap');
 const EnmapLevel = require('enmap-level');
 const moment = require('moment');
+require('moment-duration-format');
 const google = require('googleapis');
 const googleAuth = require('google-auth-library');
 const tokenPath = './youtubeCredentials.json';
@@ -16,20 +17,19 @@ const cheerio = require('cheerio'),
       snekfetch = require('snekfetch'),
       querystring = require('querystring');
 
-require('moment-duration-format');
+const ModChannel = new Enmap({
+  provider: new EnmapLevel({
+    name: 'ModChannel'
+  })
+});
+const MemberChannel = new Enmap({
+  provider: new EnmapLevel({
+    name: 'MemberChannel'
+  })
+});
 
-const NewRole = new Enmap({
-  provider: new EnmapLevel({
-    name: 'NewRole'
-  })
-});
-const Colour = new Enmap({
-  provider: new EnmapLevel({
-    name: 'Colour'
-  })
-});
-const GetUptime = bot => {
-  return moment.duration(bot.uptime).format('d:hh:mm', {
+const GetUptime = client => {
+  return moment.duration(client.uptime).format('d:hh:mm', {
     trim: false
   });
 };
@@ -44,17 +44,6 @@ var servers = {};
 
 var navy = 'What the fuck did you just fucking say about me, you little bitch? I’ll have you know I graduated top of my class in the Navy Seals, and I’ve been involved in numerous secret raids on Al-Quaeda, and I have over 300 confirmed kills. I am trained in gorilla warfare and I’m the top sniper in the entire US armed forces. You are nothing to me but just another target. I will wipe you the fuck out with precision the likes of which has never been seen before on this Earth, mark my fucking words. You think you can get away with saying that shit to me over the Internet? Think again, fucker. As we speak I am contacting my secret network of spies across the USA and your IP is being traced right now so you better prepare for the storm, maggot. The storm that wipes out the pathetic little thing you call your life. You’re fucking dead, kid. I can be anywhere, anytime, and I can kill you in over seven hundred ways, and that’s just with my bare hands. Not only am I extensively trained in unarmed combat, but I have access to the entire arsenal of the United States Marine Corps and I will use it to its full extent to wipe your miserable ass off the face of the continent, you little shit. If only you could have known what unholy retribution your little “clever” comment was about to bring down upon you, maybe you would have held your fucking tongue. But you couldn’t, you didn’t, and now you’re paying the price, you goddamn idiot. I will shit fury all over you and you will drown in it. You’re fucking dead, kiddo.';
 
-function color(member) {
-  if (!Colour.get(member.guild.id)) {
-    if (NewRole.get(member.guild.id).toLowerCase() === 'pile of shit') {
-      Colour.set(member.guild.id, '#593001');
-    } else {
-      Colour.set(member.guild.id, randomColor);
-    }
-  }
-  return Colour.get(member.guild.id);
-}
-
 function randomColor(){
   var c = '';
   while (c.length < 6) {
@@ -63,45 +52,36 @@ function randomColor(){
   return '#'+c;
 }
 
-function roleName(message) {
-  NewRole.get(message.guild.id);
-}
-
-function newRole(member) {
-  member.guild.roles.find('name', NewRole.get(member.guild.id));
-}
-
-function newRoleName(member) {
-  if (!NewRole.get(member.guild.id)) {
-    NewRole.set(member.guild.id, 'Pile of Shit');
+function modchannel(member) {
+  if (!ModChannel.get(member.guild.id)) {
+    ModChannel.set(member.guild.id, 'ModLogs');
   }
-  return NewRole.get(member.guild.id);
+  return ModChannel.get(member.guild.id);
 }
 
-function newRoleMessage(message) {
-  if (!NewRole.get(message.guild.id)) {
-    NewRole.set(message.guild.id, 'Pile of Shit');
+function memberchannel(member) {
+  if (!MemberChannel.get(member.guild.id)) {
+    MemberChannel.set(member.guild.id, 'MemberLogs');
   }
-  return NewRole.get(message.guild.id);
+  return MemberChannel.get(member.guild.id);
 }
 
-function play(connect, message) {
+function play(connection, message) {
   var server = servers[message.guild.id];
-
-  server.dispatcher = connect.playStream(YTDL(server.queue[0], {
+  server.dispatcher = connection.play(YTDL(server.queue[0], {
     filter: "audioonly"
   }));
-  server.queue.shift();
   server.dispatcher.on("end", function() {
-    if (server.queue[0]) play(connect, message);
-    else connect.disconnect();
+    server.queue.shift();
+    if (server.queue[0]) play(connection, message);
+    else connection.disconnect();
   });
 }
 
 function addAudio(message, repeat, url, title, thumbnail, channelTitle) {
   var server = servers[message.guild.id];
   if ((Number.isInteger(repeat)) > 0) {
-    var embed = new Discord.RichEmbed()
+    var embed = new Discord.MessageEmbed()
       .setColor(0x0000FF)
       .setThumbnail(thumbnail)
       .addField(title, channelTitle)
@@ -113,14 +93,14 @@ function addAudio(message, repeat, url, title, thumbnail, channelTitle) {
     }
   } else {
     server.queue.push(url);
-    var embed = new Discord.RichEmbed()
+    var embed = new Discord.MessageEmbed()
       .setColor(0x0000FF)
       .setThumbnail(thumbnail)
       .addField(title, channelTitle)
     message.channel.send(embed);
   }
-  if (!message.guild.voiceConnection) message.member.voiceChannel.join().then(function(connect) {
-    play(connect, message);
+  if (!message.guild.voiceConnection) message.member.voiceChannel.join().then(function(connection) {
+    play(connection, message);
   });
   message.delete();
 }
@@ -132,33 +112,32 @@ const clean = text => {
     return text;
   }
 
-bot.on('ready', function() {
-  bot.user.setPresence({game: { name: 'n!help | ' + `${bot.guilds.size}` + ' servers'}});
+client.on('ready', ()=> {
+  client.user.setPresence({game: { name: 'n!help | ' + `${client.guilds.size}` + ' servers'}});
   console.log('Ready');
 });
 
-bot.on('unhandledRejection', error => console.error(`Uncaught Promise Rejection:\n${error}`));
+client.on('unhandledRejection', error => console.error(`Uncaught Promise Rejection:\n${error}`));
 
-bot.on('guildMemberAdd', function(member) {
-  member.guild.channels.find('name', 'general').send(member.toString() + ', Welcome you ' + newRoleName(member) + ', type n!help for a list of commands');
-
-  if (!newRole(member)) {
-    RoleColour(member);
-    console.log('Role Colour set to: ' + color(member));
-    member.guild.createRole({
-      name: newRoleName(member),
-      color: color(member),
-      permissions: []
-    }).then(function(role) {
-      console.log('New Role, ' + newRoleName(member) + ',created with the colour,  ' + color(member) + '.');
-      member.addRole(role).catch(console.error);
-    });
-  } else {
-    member.addRole(newRole(member)).catch(console.error);
-  }
+client.on('guildMemberAdd', member => {
+  const userJoinEmbed = new Discord.MessageEmbed()
+    .setColor('#00ff00')
+    .setTitle(member.displayName + ' (' + member.id + ')')
+    .addFooter('User joined', member.user.displayAvatarURL)
+    .setTimestamp()
+  member.guild.channels.find('name', memberchannel()).send(userJoinEmbed);
 });
 
-bot.on('message', function(message) {
+client.on('guildBanAdd', member =>) {
+  const userJoinEmbed = new Discord.MessageEmbed()
+    .setColor('#00ff00')
+    .setTitle(member.displayName + ' (' + member.id + ')')
+    .addFooter('User joined', member.user.displayAvatarURL)
+    .setTimestamp()
+  member.guild.channels.find('name', modchannel()).send(embed);
+}
+
+client.on('message', message => {
   if (!message.content.startsWith(config.prefix) && !message.content.startsWith(config.prefix_uppercase) || message.author.bot) return;
 
   var args = message.content.substring(config.prefix.length).split(/ +/);
@@ -194,14 +173,14 @@ bot.on('message', function(message) {
           fetch = 100
           message.reply('I can only check 100 messages at a time.')
         }
-        message.channel.fetchMessages({
+        message.channel.messages.fetch({
           limit: fetch,
         }).then((messages) => {
           var messages = messages.filter(message => message.content.startsWith(config.prefix) || message.content.startsWith(config.prefix_uppercase) || message.author.bot).array().slice(0, fetch);
           message.channel.bulkDelete(messages, true).catch(error => console.error(err));
         });
       } else {
-        message.channel.fetchMessages({
+        message.channel.messages.fetch({
           limit: 100,
         }).then((messages) => {
           var messages = messages.filter(message => message.content.startsWith(config.prefix)|| message.content.startsWith(config.prefix_uppercase) || message.author.bot).array().slice(0, 100);
@@ -215,21 +194,16 @@ bot.on('message', function(message) {
       console.log('Navy');
       break;
     case 'info':
-      var embed = new Discord.RichEmbed()
+      var embed = new Discord.MessageEmbed()
         .setColor(0x0000FF)
         .addField('Name', 'NeonNukeBot')
         .addField('Purpose', 'Dankness')
         .addField('Maker', 'NeonNuke#1160')
         .addField('To add me to your server visit:', 'https://discordapp.com/oauth2/authorize?client_id=373462552614797312&scope=bot&permissions=303057922')
         .addField('My Github', 'https://github.com/Zentrik/DiscordBot')
-        .setThumbnail(bot.user.avatarURL)
+        .setThumbnail(client.user.avatarURL)
       message.channel.send(embed);
       console.log('Info');
-      break;
-    case 'setrole':
-      if (!message.guild.ownerID == message.member.id || !message.member.hasPermission("MANAGE_ROLES")) break;
-      NewRole.set(message.guild.id, argsrole);
-      message.reply(argsrole + ' is now the default role for newbs');
       break;
     case 'role':
       message.reply(newRoleMessage(message));
@@ -284,10 +258,26 @@ bot.on('message', function(message) {
       }
       break;
     case 'play':
+      var server = servers[message.guild.id];
+      var title = '';
+      var searchTerm = String(argssearch);
+      var url = 'https://www.youtube.com/watch?v=';
+      var id = '';
+      var thumbnail = 'https://i.ytimg.com/vi/';
+      var channelTitle = '';
+      var repeat = parseInt(args[args.length - 1]);
+
       if (!args[1]) {
-        message.channel.send("Please provide a link");
-        console.log('Link needed');
-        break;
+        if (server.dispatcher) {
+          if (server.dispatcher.pause) {
+            server.dispatcher.resume();
+            message.channel.send("Music unpaused!");
+          } else {
+            message.channel.send('Music is already playing');
+          }
+        } else {
+          message.channel.send("Please provide a link");
+        }
       }
 
       if (!message.member.voiceChannel) {
@@ -297,14 +287,6 @@ bot.on('message', function(message) {
       if (!servers[message.guild.id]) servers[message.guild.id] = {
         queue: []
       };
-
-      var title = '';
-      var searchTerm = String(argssearch);
-      var url = 'https://www.youtube.com/watch?v=';
-      var id = '';
-      var thumbnail = 'https://i.ytimg.com/vi/';
-      var channelTitle = '';
-      var repeat = parseInt(args[args.length - 1]);
 
       if (!args[1].startsWith('https://www.youtube.com/watch?v=')) {
         fs.readFile('client_secret.json', function processClientSecrets(err, content) {
@@ -398,8 +380,36 @@ bot.on('message', function(message) {
           });
         }
       } else {
-        url = args[1];
-        addAudio(message, repeat, url, title, thumbnail, channelTitle);
+        var getid = args[1].slice(32,43);
+        if ((Number.isInteger(repeat)) > 0) {
+          YTDL.getInfo(getid, (err, info) => {
+			         if(err) message.channel.send('Invalid YouTube Link: ' + err);
+               var embed = new Discord.MessageEmbed()
+                .setColor(0x0000FF)
+                .setThumbnail(info.thumbnail_url)
+                .addField(info.title, info.author.name)
+                .addField('Added', repeat + ' times')
+               message.channel.send(embed);
+          });
+          while (repeat > 0) {
+            server.queue.push(args[1]);
+            repeat--;
+          }
+        } else {
+          server.queue.push(args[1]);
+          YTDL.getInfo(getid, (err, info) => {
+			         if(err) message.channel.send('Invalid YouTube Link: ' + err);
+               var embed = new Discord.MessageEmbed()
+                .setColor(0x0000FF)
+                .setThumbnail(info.thumbnail_url)
+                .addField(info.title, info.author.name)
+               message.channel.send(embed);
+          });
+        }
+
+        if (!message.guild.voiceConnection) message.member.voiceChannel.join().then(function(connection) {
+          play(connection, message);
+        })
       }
       break;
     case 'skip':
@@ -418,21 +428,28 @@ bot.on('message', function(message) {
       break;
     case 'pause':
       var server = servers[message.guild.id];
-
       message.channel.send("Music paused!");
-      console.log('Music paused!');
-      if (server.dispatcher) server.dispatcher.pause();
-      break;
-    case 'unpause':
-      var server = servers[message.guild.id];
 
-      message.channel.send("Music unpaused!");
-      console.log('Music unpaused!');
-      if (server.dispatcher) server.dispatcher.resume();
+      if (server.dispatcher) {
+        if (server.dispatcher.paused) {
+          message.channel.send('Music is already paused');
+        } else {
+          server.dispatcher.pause();
+        }
+      } else {
+        message.channel.send('No music is playing');
+      }
+      break;
+    case 'volume':
+      if (!server.dispatcher.volumeEditable) break;
+      var volume = parseInt(args[1]);
+
+      if (Number.isInteger(volume)) server.dispatcher.setVolume(volume/100);
       break;
     case 'got':
       if (!message.member.voiceChannel) {
         return message.channel.send("Please join a Voice Channel");
+        break;
       }
       if (!servers[message.guild.id]) servers[message.guild.id] = {
         queue: []
@@ -441,24 +458,25 @@ bot.on('message', function(message) {
       var server = servers[message.guild.id];
       var repeat = parseInt(args[1]);
       if ((Number.isInteger(repeat)) > 0) {
-        message.reply('Game of Thrones themetune added to the Queue ' + repeat + ' times! :wink:');
+        message.reply('Game of Thrones themetune added to the Queue ' + repeat + ' times!');
         while (repeat > 0) {
           server.queue.push('https://www.youtube.com/watch?v=s7L2PVdrb_8');
           repeat--;
         }
       } else {
         server.queue.push('https://www.youtube.com/watch?v=s7L2PVdrb_8');
-        message.reply("Game of Thrones themetune added to the Queue! :wink:");
+        message.reply("Game of Thrones themetune added to the Queue!");
       }
 
-      if (!message.guild.voiceConnection) message.member.voiceChannel.join().then(function(connect) {
-        play(connect, message);
+      if (!message.guild.voiceConnection) message.member.voiceChannel.join().then(function(connection) {
+        play(connection, message);
       });
       message.delete();
       break;
       case 'dd':
         if (!message.member.voiceChannel) {
           return message.channel.send("Please join a Voice Channel");
+          break;
         }
         if (!servers[message.guild.id]) servers[message.guild.id] = {
           queue: []
@@ -467,24 +485,25 @@ bot.on('message', function(message) {
         var server = servers[message.guild.id];
         var repeat = parseInt(args[1]);
         if ((Number.isInteger(repeat)) > 0) {
-          message.reply('Daredevil themetune added to the Queue ' + repeat + ' times! :wink:');
+          message.reply('Daredevil themetune added to the Queue ' + repeat + ' times!');
           while (repeat > 0) {
             server.queue.push('https://www.youtube.com/watch?v=KFYFh8w4758');
             repeat--;
           }
         } else {
           server.queue.push('https://www.youtube.com/watch?v=KFYFh8w4758');
-          message.reply("Daredevil themetune added to the Queue! :wink:");
+          message.reply("Daredevil themetune added to the Queue!");
         }
 
-        if (!message.guild.voiceConnection) message.member.voiceChannel.join().then(function(connect) {
-          play(connect, message);
+        if (!message.guild.voiceConnection) message.member.voiceChannel.join().then(function(connection) {
+          play(connection, message);
         });
         message.delete();
         break;
     case 'west':
       if (!message.member.voiceChannel) {
         return message.channel.send("Please join a Voice Channel");
+        break;
       }
       if (!servers[message.guild.id]) servers[message.guild.id] = {
         queue: []
@@ -503,20 +522,28 @@ bot.on('message', function(message) {
         message.reply("WestWorld themetune added to the Queue! :wink:");
       }
 
-      if (!message.guild.voiceConnection) message.member.voiceChannel.join().then(function(connect) {
-        play(connect, message);
+      if (!message.guild.voiceConnection) message.member.voiceChannel.join().then(function(connection) {
+        play(connection, message);
       });
       message.delete();
       break;
     case 'queue':
-      var embed = new Discord.RichEmbed()
-        .setColor(0x0000FF)
-        .setThumbnail(bot.user.avatarURL)
-      message.channel.send(embed);
-      console.log('Queue printed');
+      var server = servers[message.guild.id];
+      if (!server.queue) {
+        message.channel.send('The queue is empty')
+        break;
+      }
+      editQueue = server.queue;
+
+        //for (var embed = new Discord.MessageEmbed(); editQueue[0]; editQueue.shift) {
+          //.addField(editQueue[0])
+        //}
+        //.setColor(0x0000FF)
+        //.setThumbnail(client.user.avatarURL)
+      //message.channel.send(embed);
       break;
     case 'stats':
-      message.channel.send("'Statistics' \n 'Uptime:'   #" + `${GetUptime(bot)}` + "\n 'Servers:'  #" + `${bot.guilds.size}` + "\n 'Users:'    #" + `${bot.users.size}` + "\n 'Channels:' #" + `${bot.channels.size}` + "\n 'Memory:'   #" + `${BytesToSize(process.memoryUsage().rss, 3)}`, {
+      message.channel.send("'Statistics' \n 'Uptime:'   #" + `${GetUptime(client)}` + "\n 'Servers:'  #" + `${client.guilds.size}` + "\n 'Users:'    #" + `${client.users.size}` + "\n 'Channels:' #" + `${client.channels.size}` + "\n 'Memory:'   #" + `${BytesToSize(process.memoryUsage().rss, 3)}`, {
         code: 'cs'
       });
       console.log('Stats');
@@ -558,7 +585,7 @@ bot.on('message', function(message) {
      message.reply('No results found!');
   });
     case 'help':
-      var embed = new Discord.RichEmbed()
+      var embed = new Discord.MessageEmbed()
         .setColor(0x0000FF)
         .addField(config.prefix + 'Navy', 'Navy Seals Copypasta with video')
         .addField(config.prefix + 'Purge', 'Delete all messages from bots or those starting with n!')
@@ -569,9 +596,9 @@ bot.on('message', function(message) {
         .addField(config.prefix + 'AddRole', 'Adds Role following command to Member')
         .addField(config.prefix + 'Play', 'Plays audio from Youtube video or searches , to repeat the audio place a number after the link')
         .addField(config.prefix + 'Pause', 'Pauses current song')
-        .addField(config.prefix + 'Unpause', 'unpauses current song')
         .addField(config.prefix + 'Skip', 'Skip current song')
         .addField(config.prefix + 'Stop', 'Stops audio and clears queue')
+        .addField(config.prefix + 'Volume', 'sets volume to number after command out of 100')
         .addField(config.prefix + 'Queue', 'Prints Queue')
         .addField(config.prefix + 'Got', 'Plays Game of Thrones themetune, to repeat the audio place a number after the link')
         .addField(config.prefix + 'West', 'Plays WestWorld themetune, to repeat the audio place a number after the link')
@@ -582,7 +609,7 @@ bot.on('message', function(message) {
         .addField(config.prefix + 'Eval', 'Eval command for the owner of this bot')
         .addField(config.prefix + 'Kick @member', 'Kicks mentioned member')
         .addField(config.prefix + 'Google/Search', 'Searches for query after command')
-        .setThumbnail(bot.user.avatarURL)
+        .setThumbnail(client.user.avatarURL)
       message.channel.send(embed);
       console.log('Help');
       break;
@@ -592,4 +619,4 @@ bot.on('message', function(message) {
   }
 });
 
-bot.login(config.token);
+client.login(config.token);
