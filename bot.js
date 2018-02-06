@@ -24,7 +24,9 @@ const settings = new Enmap({
 });
 const defaultSettings = {
   modLog: "modlogs",
-  memberLog: "memberlogs"
+  caseId: 0,
+  memberLog: "memberlogs",
+  prefix: "n!"
 }
 
 const GetUptime = client => {
@@ -97,18 +99,36 @@ function addAudio(message, repeat, url, title, thumbnail, channelTitle) {
   message.delete();
 }
 
-function bannadd(guild, user) {
-  guild.fetchAuditLogs({user: user.id, type: 22, limit: 1}).then(auditlog => {
+function memberkick(member) {
+  var i = settings.get(member.guild.id).caseId;
+  member.guild.fetchAuditLogs({type: 20, limit: 1}).then(auditlog => {
     var embed = new Discord.MessageEmbed()
       .setColor('#ff0000')
-      .setTitle(auditlog.entries.executor.displayAvatarURL() + ' ' + auditlog.entries.executor.username + '#' + auditlog.entries.exuctor.discriminator)
+      .setTitle(auditlog.entries.first().executor.displayAvatarURL() + ' ' + auditlog.entries.first().executor.tag)
+      .addField('Member:', member.displayName + ' (' + member.id + ')')
+      .addField('Action: ', 'Kick')
+      .addField('Reason:', auditlog.entries.first().reason)
+      .setFooter('Case ' + String(i))
+       .setTimestamp(auditlog.entries.first().createdTimestamp)
+    guild.channels.find('name', settings.get(member.guild.id).modLog).send(embed);
+  }).catch(console.error);
+  settings.set(member.guild.id, i + 1);
+}
+
+function bannadd(guild, user) {
+  var i = settings.get(member.guild.id).caseId;
+  guild.fetchAuditLogs({type: 22, limit: 1}).then(auditlog => {
+    var embed = new Discord.MessageEmbed()
+      .setColor('#ff0000')
+      .setTitle(auditlog.entries.first().executor.displayAvatarURL() + ' ' + auditlog.entries.first().executor.tag)
       .addField('Member:', user.username + ' (' + user.id + ')')
       .addField('Action: ', 'Ban')
-      .addField('Reason:', auditlog.entries.reason)
-      .setFooter('Case ' + CaseId(guild))
-      .setTimestamp(auditlog.entries.createdTimestamp)
+      .addField('Reason:', auditlog.entries.first().reason)
+      .setFooter('Case ' + String(i))
+      .setTimestamp(auditlog.entries.first().createdTimestamp)
     guild.channels.find('name', settings.get(guild.id).modLog).send(embed);
   }).catch(console.error);
+
 }
 
 function memberremove(member) {
@@ -129,14 +149,18 @@ function memberadd(member) {
   member.guild.channels.find('name', settings.get(member.guild.id).memberLog).send(embed);
 }
 
+function prefix(message) {
+  if (!settings.get(message.guild.id)) settings.set(message.guild.id, defaultSettings);
+  return settings.get(message.guild.id).prefix;
+}
+
 client.on('ready', ()=> {
-  client.user.setPresence({game: { name: 'n!help | ' + `${client.guilds.size}` + ' servers'}});
+  client.user.setPresence({activity: { name: 'n!help | ' + `${client.guilds.size}` + ' servers'}});
   console.log('Ready');
 });
 
 client.on("guildCreate", guild => {
   settings.set(guild.id, defaultSettings);
-  console.log('ay');
 });
 client.on("guildDelete", guild => {
   settings.delete(guild.id);
@@ -159,11 +183,26 @@ client.on('guildMemberAdd', member => {
 });
 
 client.on('guildMemberRemove', member => {
-  member.guild.fetchAuditLogs({user: member.id, type: 20, limit: 1}).then(auditlog => {});
   if (!member.guild.me.hasPermission('MANAGE_CHANNELS')) {
     member.guild.channels.find('id', member.guild.channels.firstKey()).send('Please, may I have the manage channels permission so that I can do log');
     return;
   }
+  member.guild.fetchAuditLogs({limit: 1}).then(auditlog => {
+      if (auditlog.entries.first().target.id == member.id) {
+        if (auditlog.entries.first().action == 'MEMBER_KICK') {
+          if (!member.guild.channels.find('name', settings.get(member.guild.id).memberLog)) {
+            member.guild.channels.create(settings.get(member.guild.id).memberLog).then(function(send) {
+              memberkick(member);;
+            }).catch(console.error);
+          } else {
+            memberkick(member);;
+          }
+        } else if (auditlog.entries.first().action == 'MEMBER_BAN_ADD') {
+          return;
+        }
+      }
+  }).catch(console.error);
+
   if (!member.guild.channels.find('name', settings.get(member.guild.id).memberLog)) {
     member.guild.channels.create(settings.get(member.guild.id).memberLog).then(function(send) {
       memberremove(member);
@@ -188,9 +227,9 @@ client.on('guildBanAdd', (guild, user) => {
 });
 
 client.on('message', message => {
-  if (!message.content.startsWith(config.prefix) && !message.content.startsWith(config.prefix_uppercase) || message.author.bot) return;
+  if (!message.content.startsWith(prefix(message)) || message.author.bot) return;
 
-  var args = message.content.substring(config.prefix.length).split(/ +/);
+  var args = message.content.substring(prefix(message).length).split(/ +/);
   var argsrole = [].slice.call(args).splice(1,args.length).join(' ');
   var argslast = parseInt(args[args.length - 1])
   if (Number.isInteger(argslast)) {
@@ -226,14 +265,14 @@ client.on('message', message => {
         message.channel.messages.fetch({
           limit: fetch,
         }).then((messages) => {
-          var messages = messages.filter(message => message.content.startsWith(config.prefix) || message.content.startsWith(config.prefix_uppercase) || message.author.bot).array().slice(0, fetch);
+          var messages = messages.filter(message => message.content.startsWith(prefix(message)) || message.author.bot).array().slice(0, fetch);
           message.channel.bulkDelete(messages, true).catch(error => console.error(err));
         });
       } else {
         message.channel.messages.fetch({
           limit: 100,
         }).then((messages) => {
-          var messages = messages.filter(message => message.content.startsWith(config.prefix)|| message.content.startsWith(config.prefix_uppercase) || message.author.bot).array().slice(0, 100);
+          var messages = messages.filter(message => message.content.startsWith(prefix(message)) || message.author.bot).array().slice(0, 100);
           message.channel.bulkDelete(messages, true).catch(error => console.error(err));
         });
       }
@@ -642,28 +681,28 @@ client.on('message', message => {
     case 'help':
       var embed = new Discord.MessageEmbed()
         .setColor(0x0000FF)
-        .addField(config.prefix + 'Navy', 'Navy Seals Copypasta with video')
-        .addField(config.prefix + 'Purge', 'Delete all messages from bots or those starting with n!')
-        .addField(config.prefix + 'Role', 'Shows role set for newbs')
-        .addField(config.prefix + 'SetRole', 'Role following command becomes role for newbs')
-        .addField(config.prefix + 'RemoveRole', 'Removes Role following command from Member')
-        .addField(config.prefix + 'DeleteRole', 'Deletes Role following command from Server')
-        .addField(config.prefix + 'AddRole', 'Adds Role following command to Member')
-        .addField(config.prefix + 'Play', 'Plays audio from Youtube video or searches , to repeat the audio place a number after the link')
-        .addField(config.prefix + 'Pause', 'Pauses current song')
-        .addField(config.prefix + 'Skip', 'Skip current song')
-        .addField(config.prefix + 'Stop', 'Stops audio and clears queue')
-        .addField(config.prefix + 'Volume', 'sets volume to number after command out of 100')
-        .addField(config.prefix + 'Queue', 'Prints Queue')
-        .addField(config.prefix + 'Got', 'Plays Game of Thrones themetune, to repeat the audio place a number after the link')
-        .addField(config.prefix + 'West', 'Plays WestWorld themetune, to repeat the audio place a number after the link')
-        .addField(config.prefix + 'DD', 'Plays Daredevil themetune, to repeat the audio place a number after the link')
-        .addField(config.prefix + 'Info', 'Info')
-        .addField(config.prefix + 'Stats', 'View bot statistics')
-        .addField(config.prefix + 'Purge (number)', 'Fetches the defined number or 100 messages and deletes all of them that are bot messages or start with n!')
-        .addField(config.prefix + 'Eval', 'Eval command for the owner of this bot')
-        .addField(config.prefix + 'Kick @member', 'Kicks mentioned member')
-        .addField(config.prefix + 'Google/Search', 'Searches for query after command')
+        .addField(prefix(message) + 'Navy', 'Navy Seals Copypasta with video')
+        .addField(prefix(message) + 'Purge', 'Delete all messages from bots or those starting with n!')
+        .addField(prefix(message) + 'Role', 'Shows role set for newbs')
+        .addField(prefix(message) + 'SetRole', 'Role following command becomes role for newbs')
+        .addField(prefix(message) + 'RemoveRole', 'Removes Role following command from Member')
+        .addField(prefix(message) + 'DeleteRole', 'Deletes Role following command from Server')
+        .addField(prefix(message) + 'AddRole', 'Adds Role following command to Member')
+        .addField(prefix(message) + 'Play', 'Plays audio from Youtube video or searches , to repeat the audio place a number after the link')
+        .addField(prefix(message) + 'Pause', 'Pauses current song')
+        .addField(prefix(message) + 'Skip', 'Skip current song')
+        .addField(prefix(message) + 'Stop', 'Stops audio and clears queue')
+        .addField(prefix(message) + 'Volume', 'sets volume to number after command out of 100')
+        .addField(prefix(message) + 'Queue', 'Prints Queue')
+        .addField(prefix(message) + 'Got', 'Plays Game of Thrones themetune, to repeat the audio place a number after the link')
+        .addField(prefix(message) + 'West', 'Plays WestWorld themetune, to repeat the audio place a number after the link')
+        .addField(prefix(message) + 'DD', 'Plays Daredevil themetune, to repeat the audio place a number after the link')
+        .addField(prefix(message) + 'Info', 'Info')
+        .addField(prefix(message) + 'Stats', 'View bot statistics')
+        .addField(prefix(message) + 'Purge (number)', 'Fetches the defined number or 100 messages and deletes all of them that are bot messages or start with n!')
+        .addField(prefix(message) + 'Eval', 'Eval command for the owner of this bot')
+        .addField(prefix(message) + 'Kick @member', 'Kicks mentioned member')
+        .addField(prefix(message) + 'Google/Search', 'Searches for query after command')
         .setThumbnail(client.user.avatarURL)
       message.channel.send(embed);
       console.log('Help');
