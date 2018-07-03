@@ -170,7 +170,7 @@ client.on('unhandledRejection', error => console.error(`Uncaught Promise Rejecti
 
 client.on('guildMemberAdd', member => {
   if (!member.guild.me.hasPermission('MANAGE_CHANNELS')) {
-    member.guild.channels.find('id', member.guild.channels.firstKey()).send('Please, may I have the manage channels permission so that I can do log');
+    member.guild.channels.find('id', member.guild.channels.firstKey()).send('Please, may I have the manage channels permission so that I can log');
     return;
   }
   if (!member.guild.channels.find('name', settings.get(member.guild.id).memberLog)) {
@@ -184,7 +184,7 @@ client.on('guildMemberAdd', member => {
 
 client.on('guildMemberRemove', member => {
   if (!member.guild.me.hasPermission('MANAGE_CHANNELS')) {
-    member.guild.channels.find('id', member.guild.channels.firstKey()).send('Please, may I have the manage channels permission so that I can do log');
+    member.guild.channels.find('id', member.guild.channels.firstKey()).send('Please, may I have the manage channels permission so that I can log');
     return;
   }
   member.guild.fetchAuditLogs({limit: 1}).then(auditlog => {
@@ -215,7 +215,7 @@ client.on('guildMemberRemove', member => {
 
 client.on('guildBanAdd', (guild, user) => {
   if (!guild.me.hasPermission('MANAGE_CHANNELS')) {
-    guild.channels.find('id', guild.channels.firstKey()).send('Please, may I have the manage channels permission so that I can do log');
+    guild.channels.find('id', guild.channels.firstKey()).send('Please, may I have the manage channels permission so that I can log');
     return;
   }
   if (!guild.channels.find('name', settings.get(guild.id).modLog)) {
