@@ -8,7 +8,7 @@ Follow this guide: [Creating a discord bot & getting a token by reactiflux](http
 2. Download the repository's file into your project folder
 
 ##### We also need to install 'dependencies', so that our bot can connect to our server in discord and work
-1. [First we need Node.js and npm](https://nodejs.org/en/download/current/)
+1. [First we need Node.js and npm](https://nodejs.org/en/download/package-manager/)
 2. Run all of these commands, using node.js command prompt as administator (only for windows)
 3. If you are on windows first run `npm install --global windows-build-tools`.
 4. Then run `npm install` 
