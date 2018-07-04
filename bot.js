@@ -1,5 +1,6 @@
 const Discord = require('discord.js');
 const client = new Discord.Client();
+var async = require('async');
 const config = require("./config.json");
 const fs = require('fs');
 const readline = require('readline');
@@ -105,14 +106,13 @@ function memberkick(member) {
     var embed = new Discord.MessageEmbed()
       .setColor('#ff0000')
       .setTitle(auditlog.entries.first().executor.displayAvatarURL() + ' ' + auditlog.entries.first().executor.tag)
-      .addField('Member:', member.displayName + ' (' + member.id + ')')
+      .addField('Member:', member.displayName + member.user.discriminator + ' (' + member.id + ')')
       .addField('Action: ', 'Kick')
       .addField('Reason:', auditlog.entries.first().reason)
       .setFooter('Case ' + String(i))
        .setTimestamp(auditlog.entries.first().createdTimestamp)
     guild.channels.find('name', settings.get(member.guild.id).modLog).send(embed);
   }).catch(console.error);
-  settings.set(member.guild.id, i + 1);
 }
 
 function bannadd(guild, user) {
@@ -134,7 +134,7 @@ function bannadd(guild, user) {
 function memberremove(member) {
   var embed = new Discord.MessageEmbed()
     .setColor('#ff0000')
-    .setTitle(member.displayName + ' (' + member.id + ')')
+    .setTitle(member.displayName + member.user.discriminator + ' (' + member.id + ')')
     .setFooter('User left', member.user.displayAvatarURL())
     .setTimestamp()
   member.guild.channels.find('name', settings.get(member.guild.id).memberLog).send(embed);
@@ -143,7 +143,7 @@ function memberremove(member) {
 function memberadd(member) {
   var embed = new Discord.MessageEmbed()
     .setColor('#00ff00')
-    .setTitle(member.displayName + ' (' + member.id + ')')
+    .setTitle(member.displayName + member.user.discriminator + ' (' + member.id + ')')
     .setFooter('User joined', member.user.displayAvatarURL())
     .setTimestamp(member.joinedAt)
   member.guild.channels.find('name', settings.get(member.guild.id).memberLog).send(embed);
@@ -155,7 +155,7 @@ function prefix(message) {
 }
 
 client.on('ready', ()=> {
-  client.user.setPresence({activity: { name: 'n!help | ' + `${client.guilds.size}` + ' servers'}});
+  client.user.setPresence({activi: { name: 'n!help | ' + `${client.guilds.size}` + ' servers'}});
   console.log('Ready');
 });
 
@@ -170,7 +170,7 @@ client.on('unhandledRejection', error => console.error(`Uncaught Promise Rejecti
 
 client.on('guildMemberAdd', member => {
   if (!member.guild.me.hasPermission('MANAGE_CHANNELS')) {
-    member.guild.channels.find('id', member.guild.channels.firstKey()).send('Please, may I have the manage channels permission so that I can do log');
+    member.guild.channels.find('id', member.guild.channels.firstKey()).send('Please, may I have the manage channels permission so that I can log');
     return;
   }
   if (!member.guild.channels.find('name', settings.get(member.guild.id).memberLog)) {
@@ -184,12 +184,13 @@ client.on('guildMemberAdd', member => {
 
 client.on('guildMemberRemove', member => {
   if (!member.guild.me.hasPermission('MANAGE_CHANNELS')) {
-    member.guild.channels.find('id', member.guild.channels.firstKey()).send('Please, may I have the manage channels permission so that I can do log');
+    member.guild.channels.find('id', member.guild.channels.firstKey()).send('Please, may I have the manage channels permission so that I can log');
     return;
   }
   member.guild.fetchAuditLogs({limit: 1}).then(auditlog => {
       if (auditlog.entries.first().target.id == member.id) {
         if (auditlog.entries.first().action == 'MEMBER_KICK') {
+          console.log('ayy');
           if (!member.guild.channels.find('name', settings.get(member.guild.id).memberLog)) {
             member.guild.channels.create(settings.get(member.guild.id).memberLog).then(function(send) {
               memberkick(member);;
@@ -214,7 +215,7 @@ client.on('guildMemberRemove', member => {
 
 client.on('guildBanAdd', (guild, user) => {
   if (!guild.me.hasPermission('MANAGE_CHANNELS')) {
-    guild.channels.find('id', guild.channels.firstKey()).send('Please, may I have the manage channels permission so that I can do log');
+    guild.channels.find('id', guild.channels.firstKey()).send('Please, may I have the manage channels permission so that I can log');
     return;
   }
   if (!guild.channels.find('name', settings.get(guild.id).modLog)) {
@@ -238,7 +239,7 @@ client.on('message', message => {
     var argssearch = [].slice.call(args).splice(1, args.length - 1).join(' ');
   }
   if (args[0].startsWith('eval')) {
-    if(message.author.id !== config.ownerID) return;
+    if(message.author.id != config.ownerID) return;
     try {
       const code = args.join(" ");
       let evaled = eval(code);
@@ -372,6 +373,7 @@ client.on('message', message => {
         } else {
           message.channel.send("Please provide a link");
         }
+        break;
       }
 
       if (!message.member.voiceChannel) {
@@ -507,6 +509,9 @@ client.on('message', message => {
       }
       break;
     case 'skip':
+      if (!servers[message.guild.id]) servers[message.guild.id] = {
+        queue: []
+      };
       var server = servers[message.guild.id];
 
       message.channel.send("Music skipped!");
@@ -521,24 +526,40 @@ client.on('message', message => {
       if (message.guild.voiceConnection) message.guild.voiceConnection.disconnect();
       break;
     case 'pause':
+      if (!servers[message.guild.id]) servers[message.guild.id] = {
+        queue: []
+      };
       var server = servers[message.guild.id];
-      message.channel.send("Music paused!");
 
       if (server.dispatcher) {
         if (server.dispatcher.paused) {
           message.channel.send('Music is already paused');
         } else {
           server.dispatcher.pause();
+          message.channel.send("Music paused!");
+          message.delete();
         }
       } else {
         message.channel.send('No music is playing');
       }
       break;
     case 'volume':
+      if (!servers[message.guild.id]) servers[message.guild.id] = {
+        queue: []
+      };
+      var server = servers[message.guild.id];
       if (!server.dispatcher.volumeEditable) break;
+      if (!args[1]) {
+        message.channel.send(server.dispatcher.volume);
+        break;
+      }
       var volume = parseInt(args[1]);
 
-      if (Number.isInteger(volume)) server.dispatcher.setVolume(volume/100);
+      if (!Number.isInteger(volume)) {
+        message.channel.send('Please put a number afterwards');
+        break;
+      }
+      server.dispatcher.setVolume(volume/100);
       break;
     case 'got':
       if (!message.member.voiceChannel) {
@@ -622,19 +643,57 @@ client.on('message', message => {
       message.delete();
       break;
     case 'queue':
-      var server = servers[message.guild.id];
-      if (!server.queue) {
+      var m = message.guild.id;
+      var v = false
+      if (!servers[message.guild.id]) servers[message.guild.id] = {
+        queue: []
+      };
+
+      var server = servers[m.toString()];
+      if (server.queue[0] == undefined) {
         message.channel.send('The queue is empty')
         break;
       }
-      editQueue = server.queue;
+      /*for (i= 0; i < server.queue.length; i++) {
+        YTDL.getInfo(server.queue[i].replace('https://www.youtube.com/watch?v=', ''), (err, info) => {
+          if (err) throw err;
+            message.channel.send(info.title + ' ' + info.author.name)
+        });
+      }*/
+      var queueEmbed = new Discord.MessageEmbed()
+      .setColor(0x0000FF)
+      async.eachSeries(server.queue, function(video, callback) {
+        console.log(video);
+        YTDL.getInfo(video.replace('https://www.youtube.com/watch?v=', ''), (err, info) => {
+          if (err) throw err;
+            console.log(info.title + ' ' + info.author.name);
+            queueEmbed.addField(info.title, info.author.name)
+            if (v == false) {
+              queueEmbed.setThumbnail(info.thumbnail_url)
+              v = true
+            }
+            callback();
+        });
+      }, function(err) {
+        if(err) {
+          console.log(err);
+          message.channel.send('Please try again later');
+        } else {
+          console.log('sending');
+          message.channel.send(queueEmbed);
+      }
+      });
 
-        //for (var embed = new Discord.MessageEmbed(); editQueue[0]; editQueue.shift) {
-          //.addField(editQueue[0])
-        //}
-        //.setColor(0x0000FF)
-        //.setThumbnail(client.user.avatarURL)
-      //message.channel.send(embed);
+      /*for (i= 0; i < server.queue.length; i++) {
+        YTDL.getInfo(server.queue[i].replace('https://www.youtube.com/watch?v=', ''), (err, info) => {
+          if (err) throw err;
+            queueEmbed.addField(info.title, info.author.name)
+        });
+        v++
+        if (v == server.queue.length) {
+          message.channel.send(queueEmbed);
+        }
+      }*/
       break;
     case 'stats':
       message.channel.send("'Statistics' \n 'Uptime:'   #" + `${GetUptime(client)}` + "\n 'Servers:'  #" + `${client.guilds.size}` + "\n 'Users:'    #" + `${client.users.size}` + "\n 'Channels:' #" + `${client.channels.size}` + "\n 'Memory:'   #" + `${BytesToSize(process.memoryUsage().rss, 3)}`, {
@@ -659,9 +718,9 @@ client.on('message', message => {
           break;
         }
         member.kick();
-        message.channel.send(message.member.displayName + ' has kicked ' + member.displayName);
+        message.channel.send(message.member.displayName + member.user.discriminator + ' has kicked ' + member.displayName + member.user.discriminator );
       } else {
-        message.reply('You do not have enough permissions to kick ' + member.displayName + '!');
+        message.reply('You do not have enough permissions to kick ' + member.displayName + member.user.discriminator + '!');
       }
       break;
     case 'myrole':
