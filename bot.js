@@ -150,6 +150,9 @@ function memberadd(member) {
 }
 
 function prefix(message) {
+  if (message.guild === null) {
+    return;
+  }
   if (!settings.get(message.guild.id)) settings.set(message.guild.id, defaultSettings);
   return settings.get(message.guild.id).prefix;
 }
@@ -255,6 +258,32 @@ client.on('message', message => {
     }
 
   switch (args[0].toLowerCase()) {
+    case 'ban':
+      if (message.mentions.members.first() === undefined) {
+        message.delete;
+        message.reply('Please specify a user to kick with a mention')
+        break;
+      }
+      var role = message.member.roles.color;
+      if (role == null && !message.guild.ownerID == message.member.id) break;
+      var member = message.guild.member(message.mentions.members.first());
+      var memberrole = member.roles.color;
+      message.delete();
+      if (message.guild.ownerID == message.member.id || message.member.hasPermission("BAN_MEMBERS") && role.comparePositionTo(memberrole) > 0) {
+        if (!member.kickable) {
+          message.reply("I can't ban this member!");
+          break;
+        }
+        if (args[2]) {
+          member.ban(args[2])
+        } else {
+          member.ban();
+        }
+        message.channel.send(message.member.displayName + member.user.discriminator + ' has banned ' + member.displayName + member.user.discriminator );
+      } else {
+        message.reply('You do not have enough permissions to ban ' + member.displayName + member.user.discriminator + '!');
+      }
+    break;
     case 'purge':
       message.delete();
       var fetch = parseInt(args[1]);
