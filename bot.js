@@ -579,7 +579,7 @@ client.on('message', message => {
       var server = servers[message.guild.id];
       if (!server.dispatcher.volumeEditable) break;
       if (!args[1]) {
-        message.channel.send(server.dispatcher.volume);
+        message.channel.send(server.dispatcher.volume*100);
         break;
       }
       var volume = parseInt(args[1]);
@@ -683,19 +683,12 @@ client.on('message', message => {
         message.channel.send('The queue is empty')
         break;
       }
-      /*for (i= 0; i < server.queue.length; i++) {
-        YTDL.getInfo(server.queue[i].replace('https://www.youtube.com/watch?v=', ''), (err, info) => {
-          if (err) throw err;
-            message.channel.send(info.title + ' ' + info.author.name)
-        });
-      }*/
+
       var queueEmbed = new Discord.MessageEmbed()
       .setColor(0x0000FF)
       async.eachSeries(server.queue, function(video, callback) {
-        console.log(video);
         YTDL.getInfo(video.replace('https://www.youtube.com/watch?v=', ''), (err, info) => {
           if (err) throw err;
-            console.log(info.title + ' ' + info.author.name);
             queueEmbed.addField(info.title, info.author.name)
             if (v == false) {
               queueEmbed.setThumbnail(info.thumbnail_url)
@@ -708,21 +701,9 @@ client.on('message', message => {
           console.log(err);
           message.channel.send('Please try again later');
         } else {
-          console.log('sending');
           message.channel.send(queueEmbed);
       }
       });
-
-      /*for (i= 0; i < server.queue.length; i++) {
-        YTDL.getInfo(server.queue[i].replace('https://www.youtube.com/watch?v=', ''), (err, info) => {
-          if (err) throw err;
-            queueEmbed.addField(info.title, info.author.name)
-        });
-        v++
-        if (v == server.queue.length) {
-          message.channel.send(queueEmbed);
-        }
-      }*/
       break;
     case 'stats':
       message.channel.send("'Statistics' \n 'Uptime:'   #" + `${GetUptime(client)}` + "\n 'Servers:'  #" + `${client.guilds.size}` + "\n 'Users:'    #" + `${client.users.size}` + "\n 'Channels:' #" + `${client.channels.size}` + "\n 'Memory:'   #" + `${BytesToSize(process.memoryUsage().rss, 3)}`, {
