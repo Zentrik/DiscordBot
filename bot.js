@@ -577,11 +577,15 @@ client.on('message', message => {
         queue: []
       };
       var server = servers[message.guild.id];
-      if (!server.dispatcher.volumeEditable) break;
+      if (server = 'undefined') {
+        message.channel.send('You need to be playing music first');
+        break;
+      }
       if (!args[1]) {
         message.channel.send(server.dispatcher.volume*100);
         break;
       }
+      if (!server.dispatcher.volumeEditable) break;
       var volume = parseInt(args[1]);
 
       if (!Number.isInteger(volume)) {
